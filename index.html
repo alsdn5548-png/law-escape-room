@@ -4,54 +4,95 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>방탈출 · 억울한 피의자를 구하라</title>
-<!-- 법과 사회 Ⅱ-03 형법과 형사 절차 (비상교육 교과서 78~81쪽) · 2026-11-03 오태식 제작
-     파일 하나로 동작(인터넷·설치 필요 없음). 진행 상황은 이 기기 브라우저에 저장되어 새로고침해도 이어진다.
-     선생님 초기화: 첫 화면 아래 '처음부터 다시' 버튼. -->
+<!-- 법과 사회 Ⅱ-03 형법과 형사 절차 (비상교육 교과서 78~81쪽) · 2026-11-03 오태식 제작 (v2: 방 장면·캐릭터·BGM)
+     파일 하나로 동작(인터넷·설치 필요 없음). 배경음은 브라우저가 직접 만든다(음원 파일 없음 → 저작권 걱정 없음).
+     진행 상황은 이 기기 브라우저에 저장되어 새로고침해도 이어진다. 선생님 초기화: 첫 화면·끝 화면 '처음부터 다시'. -->
 <style>
-  :root { --ink:#1A1D29; --accent:#3E5C87; --soft:#EEF2F7; --warm:#C17A54; --warmSoft:#F8EEE6; --red:#D0021B; --ok:#2E8B57; }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin:0; height:100%; background:var(--ink); color:var(--ink);
-    font-family: "Apple SD Gothic Neo", "Malgun Gothic", "맑은 고딕", "Noto Sans KR", sans-serif; }
-  #app { max-width: 920px; margin: 0 auto; min-height: 100%; padding: 18px 18px 40px; }
-  .bar { display:flex; justify-content:space-between; align-items:center; color:#fff; font-size:17px; margin-bottom:14px; gap:10px; flex-wrap:wrap; }
-  .bar b { color:#F3C9A8; }
-  .keys { display:flex; gap:6px; }
-  .key { width:38px; height:38px; border-radius:10px; border:2px dashed #6B7280; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:20px; color:#fff; }
-  .key.got { border:2px solid #F3C9A8; background:var(--warm); }
-  .card { background:#fff; border-radius:20px; padding:26px 24px; box-shadow: 0 8px 30px rgba(0,0,0,.25); }
-  .room-tag { display:inline-block; background:var(--accent); color:#fff; border-radius:999px; padding:5px 14px; font-size:15px; font-weight:700; }
-  h1 { font-size:34px; margin:12px 0 6px; }
-  h2 { font-size:26px; margin:10px 0 8px; }
-  p { font-size:19px; line-height:1.6; margin:8px 0; }
-  .story { background:var(--warmSoft); border-left:6px solid var(--warm); border-radius:12px; padding:14px 16px; font-size:18px; line-height:1.65; }
-  .q { font-size:21px; font-weight:800; margin:20px 0 10px; }
+  :root { --ink:#14161F; --ink2:#1E2231; --accent:#3E5C87; --soft:#EEF2F7; --warm:#C17A54; --gold:#F3C9A8; --red:#D0021B; --ok:#2E8B57; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none; }
+  html, body { margin:0; min-height:100%; background:radial-gradient(ellipse at top, #263049 0%, #0E1018 70%); color:#fff;
+    font-family:"Apple SD Gothic Neo","Malgun Gothic","맑은 고딕","Noto Sans KR",sans-serif; }
+  input { user-select:text; -webkit-user-select:text; }
+  #app { max-width:980px; margin:0 auto; padding:12px 12px 30px; }
+  /* HUD */
+  .hud { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+  .hud .info { font-size:16px; } .hud b { color:var(--gold); }
+  .hud .right { display:flex; gap:6px; align-items:center; }
+  .key { width:36px; height:36px; border-radius:10px; border:2px dashed #5B6275; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:19px; }
+  .key.got { border:2px solid var(--gold); background:linear-gradient(#D9925F,#A9603A); box-shadow:0 0 12px rgba(243,201,168,.6); }
+  .icon-btn { width:40px; height:40px; border-radius:12px; border:1px solid #3A4157; background:#1E2231; color:#fff; font-size:20px; cursor:pointer; }
+  .clock.danger { color:#FF8A8A !important; animation:blink 1s infinite; }
+  @keyframes blink { 50% { opacity:.35; } }
+  /* 장면 */
+  .stage { position:relative; width:100%; aspect-ratio:16/10; border-radius:18px; overflow:hidden; box-shadow:0 12px 40px rgba(0,0,0,.6); background:#000; }
+  .stage svg.scene { position:absolute; inset:0; width:100%; height:100%; }
+  .stage .fade { position:absolute; inset:0; background:#000; opacity:0; pointer-events:none; transition:opacity .6s; z-index:9; }
+  .stage .fade.on { opacity:1; }
+  .room-title { position:absolute; left:14px; top:12px; z-index:6; background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.15); border-radius:999px; padding:6px 14px; font-weight:800; font-size:15px; }
+  .hs { position:absolute; transform:translate(-50%,-50%); z-index:5; border:0; background:none; cursor:pointer; color:#fff; font-family:inherit; text-align:center; padding:0; }
+  .hs .em { display:block; font-size:clamp(28px,5.5vw,46px); filter:drop-shadow(0 4px 6px rgba(0,0,0,.6)); }
+  .hs .lb { display:inline-block; margin-top:2px; font-size:clamp(11px,1.8vw,15px); font-weight:800; background:rgba(0,0,0,.65); border-radius:8px; padding:3px 8px; white-space:nowrap; }
+  .hs::before { content:''; position:absolute; left:50%; top:38%; width:70px; height:70px; margin:-35px 0 0 -35px; border-radius:50%; border:3px solid rgba(243,201,168,.8); animation:ring 1.6s infinite; pointer-events:none; }
+  .hs.dim { opacity:.35; } .hs.dim::before { display:none; }
+  .hs.done::before { border-color:rgba(46,139,87,.9); animation:none; opacity:.6; }
+  @keyframes ring { 0% { transform:scale(.6); opacity:1; } 100% { transform:scale(1.4); opacity:0; } }
+  .hero { position:absolute; width:9.5%; z-index:4; transform:translate(-50%,-100%); transition-property:left,top; transition-timing-function:linear; pointer-events:none; }
+  .hero svg { width:100%; display:block; }
+  .hero.walk svg { animation:bob .32s infinite; }
+  .hero.flip svg { transform:scaleX(-1); }
+  .hero.walk.flip svg { animation:bobf .32s infinite; }
+  .hero.shake svg { animation:shake .4s; }
+  @keyframes bob { 50% { transform:translateY(-6%) rotate(-3deg); } }
+  @keyframes bobf { 0%,100% { transform:scaleX(-1); } 50% { transform:scaleX(-1) translateY(-6%) rotate(-3deg); } }
+  @keyframes shake { 25% { transform:translateX(-8%); } 75% { transform:translateX(8%); } }
+  #door { transform-box:fill-box; transform-origin:left center; transition:transform .9s ease-in; }
+  .open #door { transform:scaleX(.12); }
+  .blinkR { animation:blink .7s infinite; } .blinkB { animation:blink .7s infinite .35s; }
+  .lampglow { animation:flick 3s infinite; } @keyframes flick { 0%,100% { opacity:.55; } 47% { opacity:.55; } 50% { opacity:.25; } 53% { opacity:.6; } }
+  /* 대사 상자 */
+  .talk { margin-top:10px; background:linear-gradient(#1E2231,#171A26); border:1px solid #3A4157; border-radius:16px; padding:14px 16px; display:flex; gap:12px; align-items:flex-start; min-height:84px; }
+  .talk .who { flex:0 0 52px; height:52px; border-radius:50%; background:#2A3044; display:flex; align-items:center; justify-content:center; font-size:30px; }
+  .talk .txt { font-size:18px; line-height:1.6; } .talk .txt b { color:var(--gold); }
+  .talk .nm { font-size:13px; color:#9AA3B5; font-weight:800; margin-bottom:2px; }
+  /* 문제 패널 */
+  .sheet { position:fixed; inset:0; z-index:20; display:flex; align-items:flex-end; justify-content:center; background:rgba(8,9,14,.6); }
+  .sheet .card { width:min(940px,100%); max-height:86vh; overflow:auto; background:#fff; color:var(--ink); border-radius:22px 22px 0 0; padding:22px 20px 26px; animation:up .28s ease-out; position:relative; }
+  @keyframes up { from { transform:translateY(40px); opacity:0; } }
+  .x { position:absolute; right:12px; top:10px; width:40px; height:40px; border-radius:50%; border:0; background:#EEF2F7; font-size:20px; cursor:pointer; }
+  .tag { display:inline-block; background:var(--accent); color:#fff; border-radius:999px; padding:5px 14px; font-size:14px; font-weight:800; }
+  .page-ref { color:#6B7280; font-size:14px; margin-left:6px; }
+  h1 { font-size:34px; margin:10px 0 6px; } h2 { font-size:25px; margin:8px 0; }
+  p { font-size:18px; line-height:1.6; margin:8px 0; }
+  .q { font-size:20px; font-weight:800; margin:16px 0 10px; }
   .opts { display:grid; gap:10px; }
-  .opt { text-align:left; font-size:19px; padding:15px 16px; border-radius:14px; border:2px solid #D9DEE7; background:#fff; cursor:pointer; font-family:inherit; color:var(--ink); line-height:1.5; }
-  .opt:active { transform: scale(.99); }
-  .opt.sel { border-color:var(--accent); background:var(--soft); }
-  .opt.bad { border-color:var(--red); background:#FDECEC; }
-  .opt.done { border-color:var(--ok); background:#E8F5EE; }
+  .opt { text-align:left; font-size:18px; padding:14px 16px; border-radius:14px; border:2px solid #D9DEE7; background:#fff; cursor:pointer; font-family:inherit; color:var(--ink); line-height:1.5; }
+  .opt.sel { border-color:var(--accent); background:var(--soft); } .opt.bad { border-color:var(--red); background:#FDECEC; } .opt.done { border-color:var(--ok); background:#E8F5EE; }
   .record { border:2px solid #D9DEE7; border-radius:14px; overflow:hidden; }
-  .record .head { background:var(--ink); color:#fff; padding:10px 14px; font-weight:700; font-size:16px; }
-  .record .opt { border:0; border-bottom:1px solid #E5E7EB; border-radius:0; width:100%; }
-  .btn { display:inline-block; font-family:inherit; font-size:20px; font-weight:800; padding:14px 26px; border-radius:14px; border:0; background:var(--accent); color:#fff; cursor:pointer; margin-top:16px; }
-  .btn.warm { background:var(--warm); }
-  .btn.ghost { background:transparent; color:#9AA3B5; font-size:15px; font-weight:600; padding:8px 0; }
-  .btn:disabled { background:#9AA3B5; }
-  .msg { min-height:28px; font-size:18px; font-weight:700; margin-top:12px; }
-  .msg.bad { color:var(--red); } .msg.ok { color:var(--ok); }
-  .hint { margin-top:14px; background:var(--soft); border-radius:12px; padding:12px 14px; font-size:17px; display:none; }
-  .page-ref { color:#6B7280; font-size:15px; }
+  .record .head { background:var(--ink2); color:#fff; padding:10px 14px; font-weight:800; font-size:15px; }
+  .record .opt { border:0; border-bottom:1px solid #E5E7EB; border-radius:0; width:100%; font-family:"Courier New","Malgun Gothic",monospace; font-size:17px; }
+  .btn { display:inline-block; font-family:inherit; font-size:19px; font-weight:900; padding:14px 26px; border-radius:14px; border:0; background:var(--accent); color:#fff; cursor:pointer; margin-top:14px; }
+  .btn.warm { background:linear-gradient(#D9925F,#A9603A); box-shadow:0 6px 18px rgba(193,122,84,.45); }
+  .btn.ghost { background:transparent; color:#9AA3B5; font-size:14px; font-weight:700; padding:8px 0; }
+  .learn { background:#E8F5EE; border-radius:14px; padding:14px 16px; margin-top:12px; font-size:17px; line-height:1.6; } .learn b { color:var(--ok); }
+  .hint { background:var(--soft); border-radius:12px; padding:14px 16px; font-size:17px; line-height:1.6; }
   input.word { font-family:inherit; font-size:30px; letter-spacing:10px; text-align:center; width:260px; padding:10px; border-radius:14px; border:2px solid #D9DEE7; }
-  .seq { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; min-height:48px; }
-  .chip { background:var(--accent); color:#fff; border-radius:999px; padding:8px 14px; font-size:17px; font-weight:700; }
-  .learn { background:#E8F5EE; border-radius:14px; padding:14px 16px; margin-top:14px; font-size:18px; line-height:1.6; }
-  .learn b { color:var(--ok); }
-  .center { text-align:center; }
-  .big { font-size:64px; }
-  table.res { width:100%; border-collapse:collapse; font-size:19px; margin-top:12px; }
-  table.res td { border-bottom:1px solid #E5E7EB; padding:10px 6px; }
-  .lock { position:fixed; inset:0; background:rgba(26,29,41,.82); color:#fff; display:none; align-items:center; justify-content:center; flex-direction:column; font-size:24px; font-weight:800; z-index:5; text-align:center; padding:20px; }
+  .seq { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; min-height:44px; }
+  .chip { background:var(--accent); color:#fff; border-radius:999px; padding:8px 14px; font-size:16px; font-weight:800; }
+  .center { text-align:center; } .big { font-size:62px; line-height:1.1; }
+  table.res { width:100%; border-collapse:collapse; font-size:18px; margin-top:10px; } table.res td { border-bottom:1px solid #E5E7EB; padding:9px 6px; }
+  /* 첫 화면 */
+  .title-card { background:linear-gradient(160deg,#1E2231,#11131B); border:1px solid #333A50; border-radius:22px; padding:26px 22px; text-align:center; box-shadow:0 12px 40px rgba(0,0,0,.6); }
+  .title-card h1 { font-size:clamp(34px,7vw,56px); margin:6px 0; letter-spacing:-1px; text-shadow:0 4px 24px rgba(243,201,168,.35); }
+  .title-card .sub { color:var(--gold); font-weight:800; }
+  .title-card p { color:#D5DBE6; }
+  .avatars { display:flex; justify-content:center; gap:12px; margin:12px 0; flex-wrap:wrap; }
+  .av { width:86px; padding:6px; border-radius:16px; border:3px solid transparent; background:#262B3D; cursor:pointer; }
+  .av.on { border-color:var(--gold); background:#33394F; }
+  .team { font-family:inherit; font-size:20px; width:min(420px,100%); padding:12px; border-radius:14px; border:2px solid #3A4157; background:#0E1018; color:#fff; text-align:center; }
+  .lock { position:fixed; inset:0; background:rgba(14,16,24,.88); color:#fff; display:none; align-items:center; justify-content:center; flex-direction:column; font-size:23px; font-weight:900; z-index:40; text-align:center; padding:20px; }
+  .toast { position:fixed; left:50%; top:18%; transform:translateX(-50%); z-index:30; background:rgba(14,16,24,.92); border:2px solid var(--gold); color:#fff; padding:14px 22px; border-radius:16px; font-size:20px; font-weight:900; animation:pop .3s; }
+  @keyframes pop { from { transform:translateX(-50%) scale(.7); opacity:0; } }
+  .flykey { position:fixed; z-index:35; font-size:54px; transition:all .9s cubic-bezier(.5,-0.3,.6,1); pointer-events:none; }
 </style>
 </head>
 <body>
@@ -116,112 +157,311 @@ const FINAL = {
 
 // ---------------------------------------------------------------- 상태 (이 기기에 저장)
 const KEY = 'escape-suspect-v1';
-const fresh = () => ({ team: '', start: 0, room: -1, step: 0, keys: [], hints: 0, wrong: 0, usedHint: {}, seq: [], end: 0, lockUntil: 0, lockText: '', overtime: false });
+const fresh = () => ({ team: '', avatar: 0, start: 0, room: -1, step: 0, keys: [], hints: 0, wrong: 0, usedHint: {}, seq: [], end: 0, lockUntil: 0, lockText: '', overtime: false });
 // 저장 공간이 막힌 브라우저(사생활 보호 모드 등)에서도 화면은 뜨게 — 저장만 건너뛴다
-const store = { get() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { return {}; } },
-  set(v) { try { localStorage.setItem(KEY, v); } catch { /* 저장 못 해도 게임은 계속 */ } },
+const store = { get(k = KEY) { try { return JSON.parse(localStorage.getItem(k) || '{}'); } catch { return {}; } },
+  set(v, k = KEY) { try { localStorage.setItem(k, v); } catch { /* 저장 못 해도 게임은 계속 */ } },
   clear() { try { localStorage.removeItem(KEY); } catch { /* 무시 */ } } };
 let S = Object.assign(fresh(), store.get());
 const save = () => store.set(JSON.stringify(S));
-const $ = (h) => { const d = document.createElement('div'); d.innerHTML = h; return d.firstElementChild; };
+const $ = (h) => { const d = document.createElement('div'); d.innerHTML = h.trim(); return d.firstElementChild; };
 const app = document.getElementById('app');
 const shuffle = (a) => a.map((v) => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map((x) => x[1]);
-
 function elapsed() { return Math.floor(((S.end || Date.now()) - S.start) / 1000); }
 function fmt(sec) { const m = Math.floor(Math.abs(sec) / 60), s = Math.abs(sec) % 60; return (sec < 0 ? '-' : '') + m + ':' + String(s).padStart(2, '0'); }
-
-function bar() {
-  const left = LIMIT_MIN * 60 - elapsed();
-  const keys = ['적', '법', '절', '차'].map((k) => `<div class="key ${S.keys.includes(k) ? 'got' : ''}">${S.keys.includes(k) ? k : '?'}</div>`).join('');
-  return `<div class="bar"><div>👥 <b>${esc(S.team)}</b> · 남은 시간 <b id="clock">${fmt(left)}</b> · 힌트 ${MAX_HINTS - S.hints}개</div><div class="keys">${keys}</div></div>`;
-}
 function esc(t) { return String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 
-// 잠금이 끝나는 시각을 저장한다 — 새로고침해도 남은 시간만큼 잠긴 채로 (11-03 서지안 지적)
+// ---------------------------------------------------------------- 소리 (브라우저가 직접 만드는 배경음·효과음)
+const Snd = {
+  ctx: null, on: store.get('escape-sound').on !== false, master: null, music: null, timer: null, step: 0, next: 0, tempo: 92,
+  init() {
+    if (this.ctx) return;
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    this.ctx = new AC();
+    this.master = this.ctx.createGain(); this.master.gain.value = this.on ? 1 : 0; this.master.connect(this.ctx.destination);
+    this.music = this.ctx.createGain(); this.music.gain.value = 0.17; this.music.connect(this.master);
+  },
+  start() { // 반드시 버튼을 누른 순간에 불러야 아이패드에서도 소리가 난다
+    this.init(); if (!this.ctx) return;
+    this.ctx.resume();
+    if (!this.timer) { this.next = this.ctx.currentTime + 0.1; this.timer = setInterval(() => this.sched(), 60); }
+  },
+  stopMusic() { clearInterval(this.timer); this.timer = null; },
+  toggle() { this.on = !this.on; store.set(JSON.stringify({ on: this.on }), 'escape-sound'); if (this.master) this.master.gain.value = this.on ? 1 : 0; if (this.on) this.start(); },
+  f: (m) => 440 * Math.pow(2, (m - 69) / 12),
+  sched() {
+    const c = this.ctx;
+    while (this.next < c.currentTime + 0.25) { this.beat(this.step, this.next); this.next += 60 / this.tempo / 2; this.step = (this.step + 1) % 32; }
+  },
+  beat(i, t) { // 4마디 반복: Am - F - C - E (긴장감 있는 단조)
+    const bar = Math.floor(i / 8), root = [45, 41, 48, 40][bar], pat = [0, 0, 12, 0, 7, 0, 12, 10];
+    this.tone(root - 12 + pat[i % 8], t, 0.2, 'triangle', 0.55, this.music, 900);
+    if (i % 8 === 0) { const ch = [[0, 3, 7], [0, 4, 7], [0, 4, 7], [0, 4, 7]][bar]; ch.forEach((d) => this.tone(root + 12 + d, t, 60 / this.tempo * 4, 'sawtooth', 0.05, this.music, 700, 0.6)); }
+    if (i % 2 === 1) this.noise(t, 0.03, 0.05);
+    if (i % 16 === 14) this.tone(root + 24 + 7, t, 0.15, 'sine', 0.12, this.music, 3000);
+  },
+  tone(m, t, dur, type, vol, dest, cut = 2000, att = 0.01) {
+    const c = this.ctx, o = c.createOscillator(), g = c.createGain(), fl = c.createBiquadFilter();
+    o.type = type; o.frequency.value = this.f(m); fl.type = 'lowpass'; fl.frequency.value = cut;
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + att); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(fl); fl.connect(g); g.connect(dest || this.master); o.start(t); o.stop(t + dur + 0.05);
+  },
+  noise(t, dur, vol) {
+    const c = this.ctx; if (!this.nb) { this.nb = c.createBuffer(1, c.sampleRate * 0.3, c.sampleRate); const d = this.nb.getChannelData(0); for (let k = 0; k < d.length; k++) d[k] = Math.random() * 2 - 1; }
+    const s = c.createBufferSource(), g = c.createGain(), fl = c.createBiquadFilter();
+    s.buffer = this.nb; fl.type = 'highpass'; fl.frequency.value = 6000;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(fl); fl.connect(g); g.connect(this.music); s.start(t); s.stop(t + dur + 0.02);
+  },
+  sfx(kind) {
+    if (!this.ctx) return; const t = this.ctx.currentTime + 0.01;
+    if (kind === 'ok') [72, 76, 79, 84].forEach((m, k) => this.tone(m, t + k * 0.08, 0.35, 'sine', 0.25));
+    if (kind === 'bad') { this.tone(40, t, 0.45, 'sawtooth', 0.3, null, 500); this.tone(39, t + 0.15, 0.4, 'sawtooth', 0.25, null, 400); }
+    if (kind === 'key') [84, 88, 91, 96].forEach((m, k) => this.tone(m, t + k * 0.06, 0.5, 'triangle', 0.18));
+    if (kind === 'door') { this.tone(36, t, 0.6, 'square', 0.12, null, 300); [60, 64, 67, 72].forEach((m, k) => this.tone(m, t + 0.3 + k * 0.1, 0.6, 'triangle', 0.18)); }
+    if (kind === 'step') this.tone(30, t, 0.06, 'sine', 0.1, null, 400);
+    if (kind === 'win') [60, 64, 67, 72, 76, 79, 84].forEach((m, k) => this.tone(m, t + k * 0.11, 0.7, 'triangle', 0.22));
+  },
+};
+document.addEventListener('visibilitychange', () => { if (!Snd.ctx) return; if (document.hidden) Snd.ctx.suspend(); else Snd.ctx.resume(); });
+// 새로고침 뒤에는 첫 터치에서 소리를 다시 켠다 (브라우저 규칙상 터치 없이는 소리를 낼 수 없음)
+document.addEventListener('pointerdown', () => { if (S.room >= 0 && !S.end && Snd.on) Snd.start(); }, { once: true });
+
+// ---------------------------------------------------------------- 캐릭터 (모둠이 고르는 변호사)
+const AVATARS = [['#3E5C87', '#1E2D44'], ['#B8473D', '#5A221D'], ['#2E8B57', '#17452B'], ['#7B4FA0', '#3D2750']];
+function heroSVG(k) {
+  const [c, d] = AVATARS[k];
+  return `<svg viewBox="0 0 60 100"><ellipse cx="30" cy="97" rx="16" ry="3.5" fill="rgba(0,0,0,.35)"/>
+    <rect x="19" y="70" width="8" height="24" rx="3" fill="${d}"/><rect x="33" y="70" width="8" height="24" rx="3" fill="${d}"/>
+    <path d="M14 42 Q30 34 46 42 L44 74 L16 74 Z" fill="${c}"/><path d="M27 40 L30 56 L33 40 Z" fill="#fff"/><path d="M29 44 L30 58 L31 44 Z" fill="#B8473D"/>
+    <rect x="41" y="58" width="14" height="11" rx="2" fill="#6B4A2B"/><rect x="45" y="55" width="6" height="4" rx="1" fill="none" stroke="#6B4A2B" stroke-width="1.6"/>
+    <circle cx="30" cy="25" r="13" fill="#F2C7A5"/><path d="M17 23 Q19 9 30 10 Q42 9 43 23 Q38 15 30 16 Q22 15 17 23Z" fill="#2B2B33"/>
+    <circle cx="25" cy="26" r="1.8" fill="#222"/><circle cx="35" cy="26" r="1.8" fill="#222"/><path d="M25 32 Q30 35 35 32" stroke="#9A5B43" stroke-width="1.6" fill="none"/>
+    <circle cx="44" cy="46" r="3" fill="${S.keys.length ? '#F3C9A8' : 'transparent'}"/></svg>`;
+}
+
+// ---------------------------------------------------------------- 방 장면 (자체 제작 그림)
+const DOOR = (label) => `<g id="door"><rect x="688" y="228" width="84" height="196" rx="4" fill="#5A3B26" stroke="#2A1A10" stroke-width="4"/>
+  <rect x="700" y="244" width="60" height="72" rx="3" fill="#6E4A31"/><rect x="700" y="330" width="60" height="80" rx="3" fill="#6E4A31"/>
+  <circle cx="760" cy="330" r="5" fill="#E2B96B"/></g><rect x="684" y="224" width="92" height="204" fill="none" stroke="#1A1009" stroke-width="5"/>
+  <text x="730" y="216" fill="#E8E2D6" font-size="15" font-weight="800" text-anchor="middle">${label}</text>`;
+const SCENES = [
+  // 0 체포 현장: 밤거리 편의점 앞
+  () => `<defs><linearGradient id="sky0" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0B1230"/><stop offset="1" stop-color="#27325A"/></linearGradient>
+    <radialGradient id="lamp0"><stop offset="0" stop-color="#FFE7A3" stop-opacity=".7"/><stop offset="1" stop-color="#FFE7A3" stop-opacity="0"/></radialGradient></defs>
+    <rect width="800" height="500" fill="url(#sky0)"/><circle cx="660" cy="70" r="26" fill="#F6F1D6"/><circle cx="650" cy="62" r="26" fill="#0F1736" opacity=".35"/>
+    <g fill="#141B36"><rect x="0" y="120" width="110" height="260"/><rect x="100" y="160" width="90" height="220"/><rect x="560" y="140" width="120" height="240"/></g>
+    <g fill="#F6D57A" opacity=".55"><rect x="20" y="150" width="14" height="18"/><rect x="60" y="190" width="14" height="18"/><rect x="590" y="170" width="14" height="18"/><rect x="630" y="220" width="14" height="18"/></g>
+    <rect x="200" y="170" width="300" height="220" fill="#E9EEF5"/><rect x="200" y="170" width="300" height="40" fill="#2E8B57"/>
+    <text x="350" y="198" fill="#fff" font-size="22" font-weight="900" text-anchor="middle">24시 편의점</text>
+    <rect x="222" y="230" width="120" height="140" fill="#BFD6EA" opacity=".9"/><rect x="360" y="230" width="120" height="160" fill="#9DBAD6"/>
+    <rect x="0" y="380" width="800" height="120" fill="#3A3F4D"/><rect x="0" y="380" width="800" height="10" fill="#555B6B"/>
+    <rect x="150" y="150" width="6" height="235" fill="#2A2E3A"/><circle cx="153" cy="150" r="70" fill="url(#lamp0)" class="lampglow"/><circle cx="153" cy="150" r="9" fill="#FFE7A3"/>
+    <g transform="translate(330,330)"><rect x="0" y="20" width="230" height="50" rx="14" fill="#F2F4F8"/><path d="M40 20 L70 -8 L170 -8 L200 20Z" fill="#DDE3EC"/>
+    <rect x="0" y="38" width="230" height="10" fill="#2B4C8C"/><text x="115" y="66" fill="#2B4C8C" font-size="13" font-weight="900" text-anchor="middle">POLICE</text>
+    <rect x="96" y="-16" width="16" height="9" fill="#E33" class="blinkR"/><rect x="114" y="-16" width="16" height="9" fill="#36F" class="blinkB"/>
+    <circle cx="48" cy="72" r="15" fill="#1A1A1A"/><circle cx="184" cy="72" r="15" fill="#1A1A1A"/></g>${DOOR('경찰서로')}`,
+  // 1 조사실
+  () => `<rect width="800" height="500" fill="#2B2F3A"/><rect y="380" width="800" height="120" fill="#1C1F27"/>
+    <rect x="70" y="90" width="230" height="120" fill="#0E1118" stroke="#454B5B" stroke-width="6"/><text x="185" y="160" fill="#3D4456" font-size="15" text-anchor="middle">거울(반대편에서 보임)</text>
+    <line x1="400" y1="0" x2="400" y2="110" stroke="#111" stroke-width="3"/><path d="M370 110 L430 110 L415 92 L385 92Z" fill="#444"/>
+    <path d="M380 112 L420 112 L560 380 L240 380Z" fill="#FFF1C1" opacity=".16" class="lampglow"/>
+    <rect x="270" y="300" width="260" height="18" fill="#6B5848"/><rect x="290" y="318" width="12" height="70" fill="#4C3E33"/><rect x="498" y="318" width="12" height="70" fill="#4C3E33"/>
+    <rect x="200" y="290" width="50" height="90" rx="6" fill="#3A3F4D"/><rect x="550" y="290" width="50" height="90" rx="6" fill="#3A3F4D"/>
+    <circle cx="560" cy="90" r="34" fill="#E8E2D6" stroke="#555" stroke-width="5"/><line x1="560" y1="90" x2="560" y2="66" stroke="#222" stroke-width="4"/><line x1="560" y1="90" x2="578" y2="102" stroke="#222" stroke-width="3"/>
+    <text x="560" y="145" fill="#9AA3B5" font-size="14" text-anchor="middle">새벽 3:30</text>${DOOR('복도로')}`,
+  // 2 한결의 방
+  () => `<rect width="800" height="500" fill="#D9C7AE"/><rect y="390" width="800" height="110" fill="#9C7A57"/>
+    <rect x="300" y="70" width="160" height="120" fill="#BFE3F7" stroke="#fff" stroke-width="8"/><line x1="380" y1="70" x2="380" y2="190" stroke="#fff" stroke-width="6"/>
+    <path d="M300 70 L330 190 L300 190Z" fill="#FFF7D6" opacity=".6"/>
+    <rect x="40" y="300" width="230" height="70" rx="10" fill="#7FA6C9"/><rect x="40" y="270" width="70" height="40" rx="10" fill="#EEF2F7"/><rect x="40" y="360" width="230" height="30" fill="#6B4A2B"/>
+    <rect x="80" y="120" width="140" height="110" fill="#5A3B26"/><g fill="#C17A54"><rect x="92" y="132" width="16" height="40"/><rect x="112" y="128" width="14" height="44"/><rect x="146" y="136" width="18" height="36"/></g>
+    <g fill="#3E5C87"><rect x="92" y="182" width="20" height="38"/><rect x="118" y="186" width="14" height="34"/></g>
+    <rect x="420" y="290" width="200" height="16" fill="#6B4A2B"/><rect x="430" y="306" width="12" height="84" fill="#5A3B26"/><rect x="598" y="306" width="12" height="84" fill="#5A3B26"/>
+    <rect x="470" y="244" width="70" height="46" rx="4" fill="#222"/><rect x="476" y="250" width="58" height="34" fill="#4A6FA5"/>
+    <rect x="560" y="120" width="90" height="120" fill="#fff" opacity=".85"/><text x="605" y="170" fill="#B8473D" font-size="18" font-weight="900" text-anchor="middle">꿈을</text><text x="605" y="196" fill="#B8473D" font-size="18" font-weight="900" text-anchor="middle">향해!</text>${DOOR('밖으로')}`,
+  // 3 구속 전 피의자 심문실
+  () => `<rect width="800" height="500" fill="#4A3A2C"/><g fill="#5B4836">${[0, 1, 2, 3, 4, 5, 6, 7].map((k) => `<rect x="${k * 100}" y="0" width="92" height="380"/>`).join('')}</g>
+    <rect y="380" width="800" height="120" fill="#2E241B"/>
+    <circle cx="400" cy="90" r="46" fill="#C9A45C"/><circle cx="400" cy="90" r="36" fill="#8C6B2E"/><text x="400" y="98" fill="#F3E3B5" font-size="22" font-weight="900" text-anchor="middle">법원</text>
+    <rect x="220" y="230" width="360" height="110" fill="#6B4A2B" stroke="#3A2716" stroke-width="5"/><rect x="220" y="216" width="360" height="20" fill="#7E5A37"/>
+    <circle cx="400" cy="190" r="22" fill="#F2C7A5"/><path d="M372 230 Q400 200 428 230Z" fill="#111"/><text x="400" y="290" fill="#F3E3B5" font-size="18" font-weight="900" text-anchor="middle">판사</text>
+    <rect x="90" y="300" width="80" height="80" rx="8" fill="#3A2E24"/><rect x="620" y="300" width="0" height="0"/>${DOOR('법정으로')}`,
+  // 4 법정
+  () => `<rect width="800" height="500" fill="#3B2C21"/><rect y="370" width="800" height="130" fill="#2A1F17"/>
+    <rect x="160" y="40" width="480" height="70" fill="#5B4836"/><text x="400" y="84" fill="#E9D7A8" font-size="24" font-weight="900" text-anchor="middle">⚖ 대한민국 법원 ⚖</text>
+    <rect x="250" y="140" width="300" height="120" fill="#6B4A2B" stroke="#3A2716" stroke-width="5"/>
+    <g><circle cx="330" cy="120" r="16" fill="#F2C7A5"/><circle cx="400" cy="116" r="18" fill="#F2C7A5"/><circle cx="470" cy="120" r="16" fill="#F2C7A5"/>
+    <path d="M306 150 Q330 128 354 150Z M376 150 Q400 124 424 150Z M446 150 Q470 128 494 150Z" fill="#111"/></g>
+    <g fill="#4C3A2B">${[0, 1, 2].map((k) => `<rect x="40" y="${300 + k * 40}" width="200" height="22" rx="4"/><rect x="560" y="${300 + k * 40}" width="110" height="22" rx="4"/>`).join('')}</g>
+    <rect x="360" y="300" width="80" height="60" fill="#5B4836"/><text x="400" y="336" fill="#E9D7A8" font-size="13" font-weight="800" text-anchor="middle">피고인석</text>${DOOR('자유로')}`,
+];
+// 방마다 터치할 물건 (x,y = 장면 안 % 위치)
+const SPOTS = [
+  { record: [50, 62, '📄', '체포 보고서'], clue: [26, 70, '📘', '교과서 단서'] },
+  { record: [50, 56, '📄', '조사 기록'], clue: [22, 52, '📘', '교과서 단서'] },
+  { record: [60, 48, '📋', '압수 목록'], clue: [19, 30, '📘', '교과서 단서'] },
+  { record: [50, 50, '📜', '영장 청구서'], clue: [16, 64, '📘', '교과서 단서'] },
+];
+const FINAL_SPOTS = [[22, 62, '📜', '절차 순서판'], [68, 76, '🎤', '기자'], [89, 58, '🔐', '법정 문 자물쇠'], [50, 48, '⚖️', '재판부']];
+const DOOR_SPOT = [89, 62];
+const HOME = [10, 84];
+
+// ---------------------------------------------------------------- 공통 동작
+function hud() {
+  const left = LIMIT_MIN * 60 - elapsed();
+  const keys = ['적', '법', '절', '차'].map((k) => `<div class="key ${S.keys.includes(k) ? 'got' : ''}">${S.keys.includes(k) ? k : '?'}</div>`).join('');
+  return `<div class="hud"><div class="info">👥 <b>${esc(S.team)}</b> · ⏱ <b id="clock" class="clock ${left < 300 ? 'danger' : ''}">${fmt(left)}</b> · 💡 <span id="hl">${MAX_HINTS - S.hints}</span></div>
+    <div class="right">${keys}<button class="icon-btn" id="snd" aria-label="소리 켜기/끄기">${Snd.on ? '🔊' : '🔇'}</button></div></div>`;
+}
+function wireHud() { const b = document.getElementById('snd'); if (b) b.onclick = () => { Snd.toggle(); b.textContent = Snd.on ? '🔊' : '🔇'; }; }
+
+// 잠금이 끝나는 시각을 저장한다 — 새로고침해도 남은 시간만큼 잠긴 채로
 function lock(text) {
   S.wrong++; S.lockUntil = Date.now() + LOCK_SEC * 1000; S.lockText = text; save();
-  showLock();
+  Snd.sfx('bad'); showLock();
 }
 let lockTimer = null;
 function showLock() {
-  const L = document.getElementById('lock');
-  clearInterval(lockTimer);
+  const L = document.getElementById('lock'); clearInterval(lockTimer);
   const tick = () => {
     const n = Math.ceil((S.lockUntil - Date.now()) / 1000);
     if (n <= 0) { L.style.display = 'none'; clearInterval(lockTimer); return; }
     L.style.display = 'flex';
-    document.getElementById('lockText').innerHTML = `${esc(S.lockText)}<br>${n}초 뒤에 다시 도전!<br><span style="font-size:17px;font-weight:600">모둠원과 근거를 먼저 이야기해 보세요.</span>`;
+    document.getElementById('lockText').innerHTML = `${esc(S.lockText)}<br>${n}초 뒤에 다시 도전!<br><span style="font-size:16px;font-weight:600">모둠원과 근거를 먼저 이야기해 보세요.</span>`;
   };
   tick(); lockTimer = setInterval(tick, 250);
 }
-
-function hintBox(id, text) {
-  const used = S.usedHint[id];
-  return `<button class="btn ghost" id="hintBtn">💡 힌트 보기 (남은 힌트 ${MAX_HINTS - S.hints}개)</button><div class="hint" id="hint" style="display:${used ? 'block' : 'none'}">${text}</div>`;
+function toast(t, ms = 1600) { const el = $(`<div class="toast">${t}</div>`); document.body.append(el); setTimeout(() => el.remove(), ms); }
+function sheet(html, closable = true) {
+  closeSheet();
+  const sh = $(`<div class="sheet" id="sheet"><div class="card">${closable ? '<button class="x" id="sx" aria-label="닫기">✕</button>' : ''}${html}</div></div>`);
+  document.body.append(sh);
+  if (closable) { sh.querySelector('#sx').onclick = closeSheet; sh.onclick = (e) => { if (e.target === sh) closeSheet(); }; }
+  return sh.querySelector('.card');
 }
-function wireHint(id) {
-  const b = document.getElementById('hintBtn');
-  b.onclick = () => {
-    if (S.usedHint[id]) return;
-    if (S.hints >= MAX_HINTS) { alert('힌트를 모두 썼어요. 교과서 쪽수를 펼쳐 보세요!'); return; }
-    S.hints++; S.usedHint[id] = true; save(); render();
-  };
+function closeSheet() { const s = document.getElementById('sheet'); if (s) s.remove(); }
+function flyKey(k) {
+  const el = $(`<div class="flykey">🗝️</div>`); document.body.append(el);
+  el.style.left = (innerWidth / 2 - 27) + 'px'; el.style.top = (innerHeight / 2 - 27) + 'px';
+  const slots = document.querySelectorAll('.key'); const idx = ['적', '법', '절', '차'].indexOf(k); const r = slots[idx] && slots[idx].getBoundingClientRect();
+  requestAnimationFrame(() => requestAnimationFrame(() => { if (r) { el.style.left = r.left + 'px'; el.style.top = r.top + 'px'; } el.style.transform = 'scale(.4)'; el.style.opacity = '.2'; }));
+  setTimeout(() => el.remove(), 1000);
+}
+
+// 캐릭터 이동
+let heroPos = HOME.slice();
+function placeHero(stage, x, y) { const h = stage.querySelector('.hero'); h.style.transitionDuration = '0ms'; h.style.left = x + '%'; h.style.top = y + '%'; heroPos = [x, y]; }
+let walking = false;
+function walkTo(stage, x, y, cb) {
+  if (walking) return; walking = true;
+  const h = stage.querySelector('.hero'); const dx = x - heroPos[0], dy = y - heroPos[1];
+  const ms = Math.min(1500, Math.max(250, Math.hypot(dx, dy) * 22));
+  h.classList.toggle('flip', dx < 0); h.classList.add('walk');
+  h.style.transitionDuration = ms + 'ms'; h.style.left = x + '%'; h.style.top = y + '%'; heroPos = [x, y];
+  let n = 0; const st = setInterval(() => { if (n++ * 320 < ms) Snd.sfx('step'); else clearInterval(st); }, 320);
+  setTimeout(() => { h.classList.remove('walk'); walking = false; cb && cb(); }, ms + 30);
+}
+const feet = (x, y) => [Math.max(x - 8, 5), Math.min(y + 14, 90)]; // 물건을 가리지 않게 옆에 선다
+
+function talk(who, name, text) {
+  return `<div class="talk"><div class="who">${who}</div><div><div class="nm">${name}</div><div class="txt">${text}</div></div></div>`;
 }
 
 // ---------------------------------------------------------------- 화면
 function render() {
+  closeSheet();
   if (S.room === -1) return intro();
   if (S.end) return finish();
   if (!S.overtime && elapsed() >= LIMIT_MIN * 60) return timeUp();
-  if (S.room < ROOMS.length) return room(ROOMS[S.room]);
-  return finalRoom();
+  return play();
 }
 
 function intro() {
   app.innerHTML = '';
-  const c = $(`<div class="card">
-    <span class="room-tag">법과 사회 · 형사 절차와 인권 보장</span>
+  let av = 0;
+  const c = $(`<div class="title-card">
+    <div class="sub">법과 사회 · 형사 절차와 인권 보장 방탈출</div>
     <h1>억울한 피의자를 구하라</h1>
-    <div class="story">고등학생 <b>한결</b>(가상 인물)이 편의점 절도범으로 몰렸다. 여러분은 한결의 <b>국선 변호인 팀</b>이다.<br>
-    수사 기록 속 <b>위법한 절차</b>를 찾아 방 5개를 탈출하고 한결을 구하라!</div>
-    <p>📌 방마다 <b>열쇠 글자</b>를 하나씩 얻습니다. 마지막 방에서 네 글자를 모두 맞혀야 탈출!</p>
-    <p>⏱ 제한 시간 ${LIMIT_MIN}분 · 💡 힌트 ${MAX_HINTS}번 · ❌ 틀리면 ${LOCK_SEC}초 잠김</p>
-    <p class="q">우리 모둠 이름</p>
-    <input class="word" id="team" style="letter-spacing:2px;font-size:22px;width:100%" maxlength="12" placeholder="예: 3모둠 정의의 변호인">
-    <div><button class="btn warm" id="go">방탈출 시작!</button></div>
+    <p>고등학생 <b style="color:#F3C9A8">한결</b>(가상 인물)이 편의점 절도범으로 몰렸다.<br>여러분은 한결의 <b style="color:#F3C9A8">국선 변호인 팀</b>. 방 5개를 돌며 <b>위법한 절차</b>를 찾아내라!</p>
+    <p style="font-size:16px">🔎 방 안의 물건을 터치하면 변호사가 걸어가 조사합니다 · 🗝️ 방마다 열쇠 글자 1개<br>⏱ ${LIMIT_MIN}분 · 💡 힌트 ${MAX_HINTS}번 · ❌ 틀리면 ${LOCK_SEC}초 잠김</p>
+    <div class="q" style="color:#fff">우리 모둠 변호사를 골라 주세요</div>
+    <div class="avatars">${AVATARS.map((_, k) => `<button class="av ${k === 0 ? 'on' : ''}" data-k="${k}">${heroSVG(k)}</button>`).join('')}</div>
+    <input class="team" id="team" maxlength="12" placeholder="모둠 이름 (예: 3모둠 정의의 변호인)">
+    <div><button class="btn warm" id="go">▶ 방탈출 시작 (소리 켜짐)</button></div>
     <button class="btn ghost" id="reset">처음부터 다시 (선생님용)</button>
   </div>`);
   app.append(c);
+  c.querySelectorAll('.av').forEach((b) => { b.onclick = () => { av = +b.dataset.k; c.querySelectorAll('.av').forEach((x) => x.classList.toggle('on', x === b)); }; });
   c.querySelector('#go').onclick = () => {
     const t = c.querySelector('#team').value.trim();
     if (!t) { alert('모둠 이름을 적어 주세요.'); return; }
-    S = fresh(); S.team = t; S.start = Date.now(); S.room = 0; save(); render();
+    Snd.start();
+    S = fresh(); S.team = t; S.avatar = av; S.start = Date.now(); S.room = 0; save(); render();
   };
   c.querySelector('#reset').onclick = resetAll;
 }
+function resetAll() { if (confirm('이 태블릿의 진행 기록을 지우고 처음부터 시작할까요?')) { store.clear(); S = fresh(); Snd.stopMusic(); render(); } }
 
-function resetAll() { if (confirm('이 태블릿의 진행 기록을 지우고 처음부터 시작할까요?')) { store.clear(); S = fresh(); render(); } }
-
-function room(R) {
-  app.innerHTML = bar();
+let doorOpen = false; // 방금 푼 방: 문이 열린 채로 보여 주고, 문을 누르면 다음 방으로
+function play() {
+  const final = S.room >= ROOMS.length;
+  const ri = doorOpen ? S.room - 1 : Math.min(S.room, 4);
+  const R = ROOMS[ri];
+  app.innerHTML = hud();
+  const stage = $(`<div class="stage ${doorOpen ? 'open' : ''}"><svg class="scene" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">${SCENES[ri]()}</svg>
+    <div class="room-title">${ri < 4 ? R.tag + ' · ' + R.title : '방 5 · 법정'}</div><div class="hero">${heroSVG(S.avatar)}</div><div class="fade"></div></div>`);
+  app.append(stage); wireHud();
+  placeHero(stage, ...(doorOpen ? feet(...DOOR_SPOT).map((v, k) => (k ? v : v - 14)) : HOME));
+  const box = $('<div id="talkbox"></div>'); app.append(box);
+  const addSpot = (key, [x, y, em, lb], cls, fn) => {
+    const b = $(`<button class="hs ${cls || ''}" data-hs="${key}" style="left:${x}%;top:${y}%"><span class="em">${em}</span><span class="lb">${lb}</span></button>`);
+    b.onclick = () => { if (walking || document.getElementById('sheet')) return; walkTo(stage, ...feet(x, y), fn); };
+    stage.append(b); return b;
+  };
+  if (doorOpen) {
+    box.innerHTML = talk('🗝️', '열쇠 획득', `문이 열렸다! <b>${R.key}</b> 열쇠를 챙겨 <b>다음 방</b>으로 가자. 열린 문을 터치하세요.`);
+    addSpot('door', [DOOR_SPOT[0], DOOR_SPOT[1], '🚪', '다음 방으로'], '', () => {
+      walkTo(stage, 97, 84, () => { stage.querySelector('.fade').classList.add('on'); setTimeout(() => { doorOpen = false; render(); }, 650); });
+    });
+    return;
+  }
+  if (final) return finalRoom(stage, box, addSpot);
+  const P = SPOTS[ri];
   const needFind = R.bad >= 0 && S.step === 0;
-  const c = $(`<div class="card">
-    <span class="room-tag">${R.tag} · ${R.title}</span> <span class="page-ref">${R.page}</span>
-    <div class="story" style="margin-top:14px">${R.story}</div>
-    ${needFind ? `<p class="q">① 수사 기록에서 <u>위법한 절차</u>가 적힌 줄을 터치하세요.</p>` : `<p class="q">${R.bad >= 0 ? '② ' : ''}${R.q2}</p>`}
-    <div id="area"></div>
-    <div class="msg" id="msg"></div>
-    ${hintBox('r' + S.room + 's' + (needFind ? 0 : 1), R.hint)}
-  </div>`);
-  app.append(c);
-  const area = c.querySelector('#area');
+  box.innerHTML = talk('🧑‍💼', `${R.tag} · ${R.title}`, `${R.story}<br><b>👉 ${P.record[3]}</b>를 터치해 조사하세요. 막히면 <b>📘 교과서 단서</b>(힌트)를 써도 돼요.`);
+  addSpot('record', P.record, '', () => puzzle(R, ri));
+  addSpot('clue', P.clue, S.usedHint['r' + ri] ? 'done' : '', () => hintSheet('r' + ri, R.hint, R.page));
+  addSpot('door', [DOOR_SPOT[0], DOOR_SPOT[1], '🔒', '잠긴 문'], 'dim', () => {
+    const h = stage.querySelector('.hero'); h.classList.add('shake'); setTimeout(() => h.classList.remove('shake'), 450);
+    toast('🔒 문이 잠겨 있어요. 먼저 ' + P.record[3] + '를 조사하세요!');
+  });
+  if (!needFind && R.bad >= 0) box.innerHTML = talk('🧑‍💼', `${R.tag} · ${R.title}`, `위법을 찾아냈다! 이제 <b>${P.record[3]}</b>를 다시 터치해 어떤 권리를 침해했는지 밝히자.`);
+}
+
+function hintSheet(id, text, page) {
+  if (!S.usedHint[id]) {
+    if (S.hints >= MAX_HINTS) { toast('💡 힌트를 모두 썼어요. 교과서 ' + page + '를 펼쳐 보세요!', 2200); return; }
+    if (!confirm(`힌트를 쓸까요? (남은 힌트 ${MAX_HINTS - S.hints}개)`)) return;
+    S.hints++; S.usedHint[id] = true; save();
+    const c = document.querySelector('[data-hs="clue"]'); if (c) c.classList.add('done');
+    const hl = document.getElementById('hl'); if (hl) hl.textContent = MAX_HINTS - S.hints;
+  }
+  sheet(`<span class="tag">📘 교과서 단서</span><span class="page-ref">${page}</span><div class="hint" style="margin-top:12px">${text}</div>`);
+}
+
+function puzzle(R, ri) {
+  const needFind = R.bad >= 0 && S.step === 0;
+  const card = sheet(`<span class="tag">${R.tag} · ${R.title}</span><span class="page-ref">${R.page}</span>
+    <p class="q">${needFind ? '① 수사 기록에서 <u>위법한 절차</u>가 적힌 줄을 터치하세요.' : (R.bad >= 0 ? '② ' : '') + R.q2}</p><div id="area"></div>`);
+  const area = card.querySelector('#area');
   if (needFind || R.bad < 0) {
-    const rec = $(`<div class="record"><div class="head">📄 수사 기록</div></div>`);
+    const rec = $(`<div class="record"><div class="head">📄 수사 기록 — 한결 사건</div></div>`);
     R.record.forEach((line, i) => {
       const b = $(`<button class="opt">${line}</button>`);
       if (!needFind) { b.disabled = true; b.style.cursor = 'default'; }
       b.onclick = () => {
-        if (i === R.bad) { S.step = 1; save(); render(); }
+        if (i === R.bad) { S.step = 1; save(); Snd.sfx('ok'); b.classList.add('done'); setTimeout(() => { puzzle(R, ri); const t = document.getElementById('talkbox'); if (t) t.innerHTML = talk('🧑‍💼', R.tag, '위법을 찾아냈다! 이제 어떤 권리를 침해했는지 밝히자.'); }, 500); }
         else { b.classList.add('bad'); lock('그 줄은 적법한 절차예요.'); setTimeout(() => b.classList.remove('bad'), 1200); }
       };
       rec.append(b);
@@ -243,93 +483,90 @@ function room(R) {
     });
     area.append(opts);
   }
-  wireHint('r' + S.room + 's' + (needFind ? 0 : 1));
 }
 
 function solved(R) {
-  app.innerHTML = bar();
-  const c = $(`<div class="card center">
-    <div class="big">🗝️</div>
-    <h2>${R.tag} 탈출! 열쇠 글자 「${R.key}」 획득</h2>
-    <div class="learn" style="text-align:left">${R.learn}</div>
-    <button class="btn" id="next">다음 방으로 →</button>
-  </div>`);
-  app.append(c);
-  c.querySelector('#next').onclick = render;
+  Snd.sfx('key');
+  const card = sheet(`<div class="center"><div class="big">🗝️</div><h2>${R.tag} 해결! 열쇠 글자 「${R.key}」 획득</h2></div>
+    <div class="learn">${R.learn}</div><div class="center"><button class="btn warm" id="nx">문을 연다 🚪</button></div>`, false);
+  card.querySelector('#nx').onclick = () => {
+    closeSheet(); doorOpen = true; render(); flyKey(R.key);
+    setTimeout(() => Snd.sfx('door'), 200);
+  };
 }
 
-function finalRoom() {
-  app.innerHTML = bar();
+function finalRoom(stage, box, addSpot) {
   const st = S.step;
-  const c = $(`<div class="card">
-    <span class="room-tag">방 5 · 법정</span> <span class="page-ref">교과서 78~81쪽</span>
-    <div class="story" style="margin-top:14px">드디어 한결의 재판 날. 하지만 법정 문은 세 겹의 자물쇠로 잠겨 있다.</div>
-    <div id="area"></div><div class="msg" id="msg"></div>
-    ${hintBox('final' + st, ['수사 기관이 조사 → 경찰이 검찰로 넘김 → 검사가 법원에 재판 신청 → 재판 → 판결 순서예요. (교과서 78~79쪽 흐름도)', '유죄 판결이 확정될 때까지 피고인은 어떻게 대우받아야 할까요?', '네 방에서 얻은 글자를 순서대로! 형사 절차 전체를 지배하는 원칙의 이름이에요. (교과서 80쪽 첫 문단)', '구금되었다가 무죄 판결을 받은 사람이 국가에 청구하는 제도예요. (교과서 81쪽)'][st])}
-  </div>`);
-  app.append(c);
-  const area = c.querySelector('#area'); const msg = c.querySelector('#msg');
+  const lines = ['드디어 한결의 재판 날! 법정 안에는 <b>자물쇠 3개</b>가 걸려 있다. <b>📜 절차 순서판</b>부터 풀자.',
+    '순서판이 열렸다! 법정 앞에서 <b>🎤 기자</b>가 소리치고 있다. 기자에게 가 보자.',
+    '이제 <b>🔐 법정 문 자물쇠</b>. 네 방에서 모은 열쇠 글자로 원칙의 이름을 완성하자!',
+    '법정 문이 열렸다! <b>⚖️ 재판부</b>에게 가서 마지막 질문에 답하자.'];
+  box.innerHTML = talk('🧑‍💼', '방 5 · 법정', lines[st]);
+  FINAL_SPOTS.forEach((sp, k) => addSpot('final' + k, sp, k < st ? 'done' : (k > st ? 'dim' : ''), () => {
+    if (k !== st) { toast(k < st ? '✅ 이미 풀었어요' : '🔒 앞의 자물쇠부터 풀어요'); return; }
+    finalPuzzle(st);
+  }));
+  addSpot('clue', [10, 46, '📘', '교과서 단서'], S.usedHint['final' + st] ? 'done' : '', () => hintSheet('final' + st,
+    ['수사 기관이 조사 → 경찰이 검찰로 넘김 → 검사가 법원에 재판 신청 → 재판 → 판결 순서예요. (교과서 78~79쪽 흐름도)', '유죄 판결이 확정될 때까지 피고인은 어떻게 대우받아야 할까요?', '네 방에서 얻은 글자를 순서대로! 형사 절차 전체를 지배하는 원칙의 이름이에요. (교과서 80쪽 첫 문단)', '구금되었다가 무죄 판결을 받은 사람이 국가에 청구하는 제도예요. (교과서 81쪽)'][st], '교과서 78~81쪽'));
+}
+
+function finalPuzzle(st) {
+  const next = () => { S.step++; save(); Snd.sfx('door'); closeSheet(); render(); };
   if (st === 0) {
-    area.append($(`<p class="q">자물쇠 ① 형사 절차를 순서대로 터치하세요.</p>`));
-    const seq = $('<div class="seq"></div>'); area.append(seq);
-    const box = $('<div class="opts"></div>'); area.append(box);
-    let picked = [];
+    const card = sheet(`<span class="tag">자물쇠 ① 절차 순서판</span><span class="page-ref">교과서 78~79쪽</span><p class="q">형사 절차를 순서대로 터치하세요.</p><div class="seq"></div><div class="opts"></div>`);
+    const seq = card.querySelector('.seq'), box = card.querySelector('.opts'); let picked = [];
     shuffle(FINAL.order).forEach((step) => {
       const b = $(`<button class="opt">${step}</button>`);
       b.onclick = () => {
         if (picked.includes(step)) return;
         if (step !== FINAL.order[picked.length]) { picked = []; seq.innerHTML = ''; box.querySelectorAll('.opt').forEach((x) => x.classList.remove('sel')); lock('순서가 틀렸어요. 처음부터!'); return; }
-        picked.push(step); b.classList.add('sel'); seq.append($(`<span class="chip">${picked.length}. ${step}</span>`));
-        if (picked.length === FINAL.order.length) { S.step = 1; save(); setTimeout(render, 600); }
+        picked.push(step); b.classList.add('sel'); seq.append($(`<span class="chip">${picked.length}. ${step}</span>`)); Snd.sfx('step');
+        if (picked.length === FINAL.order.length) { Snd.sfx('ok'); setTimeout(next, 600); }
       };
       box.append(b);
     });
   } else if (st === 1) {
-    area.append($(`<p class="q">자물쇠 ② ${FINAL.q}</p>`));
-    const box = $('<div class="opts"></div>'); area.append(box);
+    const card = sheet(`<span class="tag">자물쇠 ② 기자</span><span class="page-ref">교과서 80쪽</span><p class="q">${FINAL.q}</p><div class="opts"></div>`);
+    const box = card.querySelector('.opts');
     shuffle(FINAL.opts.map((o, i) => i)).forEach((i, k) => {
       const b = $(`<button class="opt">${String.fromCharCode(9312 + k)} ${FINAL.opts[i]}</button>`);
-      b.onclick = () => { if (i === FINAL.ans) { S.step = 2; save(); render(); } else lock('다시 생각해 보세요.'); };
+      b.onclick = () => { if (i === FINAL.ans) next(); else lock('다시 생각해 보세요.'); };
       box.append(b);
     });
   } else if (st === 2) {
-    area.append($(`<p class="q">자물쇠 ③ 열쇠 글자 네 개로 원칙의 이름을 완성하세요.</p>`));
-    area.append($(`<p>"누구든지 법률에 규정된 절차에 따르지 않고는 처벌할 수 없다." — 이 원칙은?</p>`));
-    const row = $(`<div class="center"><input class="word" id="w" maxlength="4" autocomplete="off"><br><button class="btn warm" id="ok">법정 문 열기</button></div>`);
-    area.append(row);
-    row.querySelector('#ok').onclick = () => {
-      const v = row.querySelector('#w').value.replace(/\s/g, '');
-      if (v === FINAL.word) { S.step = 3; save(); render(); } else lock('그 단어가 아니에요.');
+    const card = sheet(`<span class="tag">자물쇠 ③ 법정 문</span><span class="page-ref">교과서 80쪽</span><p class="q">열쇠 글자 네 개로 원칙의 이름을 완성하세요.</p>
+      <p>"누구든지 법률에 규정된 절차에 따르지 않고는 처벌할 수 없다." — 이 원칙은?</p>
+      <div class="center"><input class="word" id="w" maxlength="4" autocomplete="off"><br><button class="btn warm" id="ok">법정 문 열기</button></div>`);
+    card.querySelector('#ok').onclick = () => {
+      const v = card.querySelector('#w').value.replace(/\s/g, '');
+      if (v === FINAL.word) next(); else lock('그 단어가 아니에요.');
     };
   } else {
-    area.append($(`<div class="learn"><b>적법 절차의 원칙</b> 덕분에 한결은 공정한 재판을 받았습니다. 위법하게 얻은 자백과 증거는 모두 증거에서 빠졌어요.</div>`));
-    area.append($(`<p class="q">마지막 질문 — ${FINAL.epilogue}</p>`));
-    const box = $('<div class="opts"></div>'); area.append(box);
+    const card = sheet(`<span class="tag">마지막 질문 · 재판부</span><span class="page-ref">교과서 81쪽</span>
+      <div class="learn"><b>적법 절차의 원칙</b> 덕분에 한결은 공정한 재판을 받았습니다. 위법하게 얻은 자백과 증거는 모두 증거에서 빠졌어요.</div>
+      <p class="q">${FINAL.epilogue}</p><div class="opts"></div>`);
+    const box = card.querySelector('.opts');
     shuffle(FINAL.epOpts.map((o, i) => i)).forEach((i, k) => {
       const b = $(`<button class="opt">${String.fromCharCode(9312 + k)} ${FINAL.epOpts[i]}</button>`);
-      b.onclick = () => { if (i === FINAL.epAns) { S.end = Date.now(); save(); render(); } else lock('다시 생각해 보세요.'); };
+      b.onclick = () => { if (i === FINAL.epAns) { S.end = Date.now(); save(); Snd.sfx('win'); Snd.stopMusic(); render(); } else lock('다시 생각해 보세요.'); };
       box.append(b);
     });
   }
-  wireHint('final' + st);
 }
 
 // 제한 시간이 끝나면 진행을 멈추고 결과를 보여 준다. 배움을 끝까지 하도록 '마저 풀기'는 남기되 기록엔 시간 초과로 남는다.
 function timeUp() {
   app.innerHTML = '';
-  const c = $(`<div class="card center">
-    <div class="big">⏰</div>
-    <h1>시간 종료!</h1>
+  const c = $(`<div class="title-card">
+    <div class="big">⏰</div><h1>시간 종료!</h1>
     <p>국선 변호인 팀 <b>${esc(S.team)}</b>의 ${LIMIT_MIN}분 기록입니다. 이 화면을 선생님께 보여 주세요.</p>
-    <table class="res">
+    <div class="card" style="background:#fff;color:#14161F;border-radius:16px;padding:6px 14px"><table class="res">
       <tr><td>🗝️ 모은 열쇠</td><td><b>${S.keys.length}</b> / 4 ${S.keys.length ? '(' + S.keys.join('') + ')' : ''}</td></tr>
       <tr><td>🚪 도착한 방</td><td><b>방 ${Math.min(S.room + 1, 5)}</b></td></tr>
       <tr><td>💡 쓴 힌트</td><td><b>${S.hints}</b>개</td></tr>
-      <tr><td>❌ 틀린 횟수</td><td><b>${S.wrong}</b>번</td></tr>
-    </table>
+      <tr><td>❌ 틀린 횟수</td><td><b>${S.wrong}</b>번</td></tr></table></div>
     <button class="btn" id="more">남은 방 마저 풀기 (기록: 시간 초과)</button><br>
-    <button class="btn ghost" id="reset">처음부터 다시 (선생님용)</button>
-  </div>`);
+    <button class="btn ghost" id="reset">처음부터 다시 (선생님용)</button></div>`);
   app.append(c);
   c.querySelector('#more').onclick = () => { S.overtime = true; save(); render(); };
   c.querySelector('#reset').onclick = resetAll;
@@ -338,32 +575,30 @@ function timeUp() {
 function finish() {
   app.innerHTML = '';
   const t = elapsed();
-  // 성공 여부는 실제 걸린 시간으로 판단한다 — 종료 화면이 뜨기 직전 1초 안에 누른 정답도 시간 초과로 (11-03 서지안 지적)
+  // 성공 여부는 실제 걸린 시간으로 판단한다 — 종료 화면이 뜨기 직전 1초 안에 누른 정답도 시간 초과로
   const late = S.overtime || S.end - S.start > LIMIT_MIN * 60 * 1000; // 초를 버림하면 25:00.5가 '25:00'으로 통과해 버린다 → 밀리초로 비교
-  const c = $(`<div class="card center">
-    <div class="big">${late ? '⏰' : '🎉'}</div>
+  const c = $(`<div class="title-card">
+    <div style="width:120px;margin:0 auto">${heroSVG(S.avatar)}</div>
     <h1>${late ? '시간 초과 탈출' : '탈출 성공!'}</h1>
     <p>한결을 구했습니다. 국선 변호인 팀 <b>${esc(S.team)}</b> 수고했어요!</p>
-    <table class="res">
+    <div class="card" style="background:#fff;color:#14161F;border-radius:16px;padding:6px 14px"><table class="res">
       <tr><td>⏱ 탈출 시간</td><td><b>${fmt(t)}</b> ${late ? '(시간 초과)' : ''}</td></tr>
       <tr><td>💡 쓴 힌트</td><td><b>${S.hints}</b>개</td></tr>
       <tr><td>❌ 틀린 횟수</td><td><b>${S.wrong}</b>번</td></tr>
-      <tr><td>🕒 끝난 시각</td><td>${new Date(S.end).toLocaleTimeString('ko-KR')}</td></tr>
-    </table>
-    <div class="learn" style="text-align:left">오늘 찾은 권리: <b>미란다 원칙 · 진술 거부권과 자백의 증거 능력 · 영장주의와 위법 수집 증거 배제 · 구속 적부심 · 무죄 추정 · 형사 보상</b></div>
-    <p style="font-size:17px;color:#6B7280">이 화면을 선생님께 보여 주세요.</p>
-    <button class="btn ghost" id="reset">처음부터 다시 (선생님용)</button>
-  </div>`);
+      <tr><td>🕒 끝난 시각</td><td>${new Date(S.end).toLocaleTimeString('ko-KR')}</td></tr></table>
+    <div class="learn" style="text-align:left">오늘 찾은 권리: <b>미란다 원칙 · 진술 거부권과 자백의 증거 능력 · 영장주의와 위법 수집 증거 배제 · 구속 적부심 · 무죄 추정 · 형사 보상</b></div></div>
+    <p style="font-size:16px">이 화면을 선생님께 보여 주세요.</p>
+    <button class="btn ghost" id="reset">처음부터 다시 (선생님용)</button></div>`);
   app.append(c);
   c.querySelector('#reset').onclick = resetAll;
 }
 
-// 남은 시간 표시
 setInterval(() => {
   const el = document.getElementById('clock');
   if (!el || S.end) return;
   const left = LIMIT_MIN * 60 - elapsed();
-  el.textContent = fmt(left); el.style.color = left < 0 ? '#FF8A8A' : '';
+  el.textContent = fmt(left); el.classList.toggle('danger', left < 300);
+  if (left < 300 && Snd.tempo !== 118) Snd.tempo = 118; // 5분 남으면 음악이 빨라진다
   if (left <= 0 && !S.overtime) render(); // 시간이 다 되면 그 자리에서 멈춤
 }, 1000);
 render();
