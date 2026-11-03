@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>방탈출 · 억울한 피의자를 구하라</title>
+<!-- 법과 사회 Ⅱ-03 형법과 형사 절차 (비상교육 교과서 78~81쪽) · 2026-11-03 오태식 제작
+     파일 하나로 동작(인터넷·설치 필요 없음). 진행 상황은 이 기기 브라우저에 저장되어 새로고침해도 이어진다.
+     선생님 초기화: 첫 화면 아래 '처음부터 다시' 버튼. -->
+<style>
+  :root { --ink:#1A1D29; --accent:#3E5C87; --soft:#EEF2F7; --warm:#C17A54; --warmSoft:#F8EEE6; --red:#D0021B; --ok:#2E8B57; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin:0; height:100%; background:var(--ink); color:var(--ink);
+    font-family: "Apple SD Gothic Neo", "Malgun Gothic", "맑은 고딕", "Noto Sans KR", sans-serif; }
+  #app { max-width: 920px; margin: 0 auto; min-height: 100%; padding: 18px 18px 40px; }
+  .bar { display:flex; justify-content:space-between; align-items:center; color:#fff; font-size:17px; margin-bottom:14px; gap:10px; flex-wrap:wrap; }
+  .bar b { color:#F3C9A8; }
+  .keys { display:flex; gap:6px; }
+  .key { width:38px; height:38px; border-radius:10px; border:2px dashed #6B7280; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:20px; color:#fff; }
+  .key.got { border:2px solid #F3C9A8; background:var(--warm); }
+  .card { background:#fff; border-radius:20px; padding:26px 24px; box-shadow: 0 8px 30px rgba(0,0,0,.25); }
+  .room-tag { display:inline-block; background:var(--accent); color:#fff; border-radius:999px; padding:5px 14px; font-size:15px; font-weight:700; }
+  h1 { font-size:34px; margin:12px 0 6px; }
+  h2 { font-size:26px; margin:10px 0 8px; }
+  p { font-size:19px; line-height:1.6; margin:8px 0; }
+  .story { background:var(--warmSoft); border-left:6px solid var(--warm); border-radius:12px; padding:14px 16px; font-size:18px; line-height:1.65; }
+  .q { font-size:21px; font-weight:800; margin:20px 0 10px; }
+  .opts { display:grid; gap:10px; }
+  .opt { text-align:left; font-size:19px; padding:15px 16px; border-radius:14px; border:2px solid #D9DEE7; background:#fff; cursor:pointer; font-family:inherit; color:var(--ink); line-height:1.5; }
+  .opt:active { transform: scale(.99); }
+  .opt.sel { border-color:var(--accent); background:var(--soft); }
+  .opt.bad { border-color:var(--red); background:#FDECEC; }
+  .opt.done { border-color:var(--ok); background:#E8F5EE; }
+  .record { border:2px solid #D9DEE7; border-radius:14px; overflow:hidden; }
+  .record .head { background:var(--ink); color:#fff; padding:10px 14px; font-weight:700; font-size:16px; }
+  .record .opt { border:0; border-bottom:1px solid #E5E7EB; border-radius:0; width:100%; }
+  .btn { display:inline-block; font-family:inherit; font-size:20px; font-weight:800; padding:14px 26px; border-radius:14px; border:0; background:var(--accent); color:#fff; cursor:pointer; margin-top:16px; }
+  .btn.warm { background:var(--warm); }
+  .btn.ghost { background:transparent; color:#9AA3B5; font-size:15px; font-weight:600; padding:8px 0; }
+  .btn:disabled { background:#9AA3B5; }
+  .msg { min-height:28px; font-size:18px; font-weight:700; margin-top:12px; }
+  .msg.bad { color:var(--red); } .msg.ok { color:var(--ok); }
+  .hint { margin-top:14px; background:var(--soft); border-radius:12px; padding:12px 14px; font-size:17px; display:none; }
+  .page-ref { color:#6B7280; font-size:15px; }
+  input.word { font-family:inherit; font-size:30px; letter-spacing:10px; text-align:center; width:260px; padding:10px; border-radius:14px; border:2px solid #D9DEE7; }
+  .seq { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; min-height:48px; }
+  .chip { background:var(--accent); color:#fff; border-radius:999px; padding:8px 14px; font-size:17px; font-weight:700; }
+  .learn { background:#E8F5EE; border-radius:14px; padding:14px 16px; margin-top:14px; font-size:18px; line-height:1.6; }
+  .learn b { color:var(--ok); }
+  .center { text-align:center; }
+  .big { font-size:64px; }
+  table.res { width:100%; border-collapse:collapse; font-size:19px; margin-top:12px; }
+  table.res td { border-bottom:1px solid #E5E7EB; padding:10px 6px; }
+  .lock { position:fixed; inset:0; background:rgba(26,29,41,.82); color:#fff; display:none; align-items:center; justify-content:center; flex-direction:column; font-size:24px; font-weight:800; z-index:5; text-align:center; padding:20px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="lock" id="lock"><div class="big">🔒</div><div id="lockText"></div></div>
+<script>
+'use strict';
+// ---------------------------------------------------------------- 내용 (교과서 78~81쪽 기반, 인물은 허구)
+const LIMIT_MIN = 25;      // 제한 시간(분)
+const LOCK_SEC = 10;       // 틀리면 잠기는 시간
+const MAX_HINTS = 3;
+
+const ROOMS = [
+  { key: '적', tag: '방 1', title: '체포 현장', page: '교과서 80쪽',
+    story: '밤 9시, 편의점 앞. 경찰관 두 명이 한결(고2, 가상 인물)에게 다가왔다. "편의점 절도 신고가 들어왔다." 한결은 "저 아니에요!"라고 외쳤다.',
+    record: ['오후 9:02 신고 접수: 편의점에서 이어폰 1개 도난', '오후 9:10 경찰관이 한결에게 다가가 신분증을 요구함', '오후 9:11 경찰관이 아무 설명 없이 한결에게 수갑을 채우고 순찰차에 태움', '오후 9:30 경찰서 도착, 한결의 부모에게 연락함'],
+    bad: 2,
+    q2: '이 장면에서 경찰이 지키지 않은 것은?',
+    opts: ['미란다 원칙 — 체포할 때 진술 거부권과 변호인을 선임할 수 있다는 것을 알려야 함', '공개 재판주의 — 재판은 공개해야 함', '불이익 변경 금지 — 피고인만 항소하면 더 무거운 형을 줄 수 없음', '일사부재리 — 확정된 사건은 다시 재판하지 않음'],
+    ans: 0,
+    hint: '체포할 때 수사 기관이 "미리 알려 줄 의무"가 있는 권리가 있어요. 「형사 소송법」 제244조의3.',
+    learn: '<b>미란다 원칙</b>: 수사 기관은 피의자를 체포하거나 신문할 때 진술 거부권, 변호인의 조력을 받을 권리 등을 미리 알려야 한다.' },
+  { key: '법', tag: '방 2', title: '조사실', page: '교과서 80쪽',
+    story: '경찰서 조사실. 한결은 계속 "훔치지 않았다"고 말했지만, 조사는 새벽까지 이어졌다.',
+    record: ['오후 10:00 조사 시작, 한결은 혐의를 부인함', '오전 1:00 형사가 "자백하면 바로 집에 보내 주겠다"고 함', '오전 3:30 지친 한결이 "제가 했어요"라고 진술서를 씀', '오전 9:00 한결의 부모가 변호사와 함께 경찰서에 도착함'],
+    bad: 1,
+    q2: '이렇게 받아 낸 자백이 "유일한 증거"라면 재판에서는?',
+    opts: ['자백했으니 그것만으로 유죄를 선고할 수 있다', '피고인의 자백만이 유일한 증거이면 유죄의 증거로 삼을 수 없다', '경찰이 받은 자백이므로 판사는 반드시 따라야 한다', '자백은 언제나 무효이므로 재판을 열 수 없다'],
+    ans: 1,
+    hint: '증거 재판주의를 떠올려 보세요. 자백 하나만 있을 때는 어떻게 될까요?',
+    learn: '<b>진술 거부권</b>: 누구든지 자신에게 불리한 진술을 거부할 수 있다. 증거 재판주의에 따라 <b>자백만이 유일한 증거이면 유죄의 증거로 삼지 않는다</b>.' },
+  { key: '절', tag: '방 3', title: '압수 · 수색', page: '교과서 80쪽',
+    story: '다음 날 아침, 수사관들이 증거를 찾겠다며 한결의 집으로 갔다.',
+    record: ['오전 10:00 수사관 2명이 한결의 집을 방문함', '오전 10:05 영장 없이 집 안으로 들어가 한결의 휴대폰과 가방을 가져감', '오전 11:00 휴대폰 사진첩에서 편의점 근처 사진을 찾음', '오후 2:00 사진을 수사 기록에 증거로 붙임'],
+    bad: 1,
+    q2: '이 휴대폰 사진은 재판에서 유죄의 증거가 될 수 있을까?',
+    opts: ['될 수 있다 — 진짜 사진이므로 내용이 중요하다', '될 수 있다 — 수사관이 직접 찾았으므로 믿을 수 있다', '될 수 없다 — 영장 없이 위법하게 수집한 증거는 유죄의 증거로 인정하지 않는다', '될 수 없다 — 사진은 원래 증거가 될 수 없다'],
+    ans: 2,
+    hint: '압수·수색을 할 때 판사에게 반드시 받아야 하는 것이 있어요. 그것 없이 모은 증거는?',
+    learn: '<b>영장주의</b>: 체포·구속·압수·수색은 판사가 발부한 영장이 있어야 한다. <b>위법하게 수집한 증거는 유죄의 증거로 인정하지 않는다</b>.' },
+  { key: '차', tag: '방 4', title: '구속의 갈림길', page: '교과서 78~80쪽',
+    story: '검사는 한결을 구속하겠다며 법원에 구속 영장을 청구했다. 한결은 구치소로 옮겨질 위기다.',
+    record: ['오후 3:00 검사가 법원에 구속 영장 발부를 청구함', '오후 4:00 판사가 한결을 만나 이야기를 직접 들음 (구속 전 피의자 심문)', '오후 6:00 판사가 구속 영장을 발부함', '다음 날 한결의 변호인이 "구속이 부당하다"고 판단함'],
+    bad: -1, // 이 방은 위법 찾기 대신 제도 고르기
+    q2: '변호인이 법원에 "구속이 적법하고 필요한지 다시 심사해서 석방해 달라"고 청구하는 제도는?',
+    opts: ['보석 제도', '구속 적부심 제도', '형사 보상 제도', '배상 명령 제도'],
+    ans: 1,
+    hint: '체포·구속된 "피의자"가 법원에 재심사를 청구하는 제도예요. 보석은 기소된 뒤 "피고인"이 보증금을 내는 제도랍니다.',
+    learn: '<b>구속 전 피의자 심문</b>: 판사가 피의자를 직접 만나 구속 여부를 결정한다. <b>구속 적부심</b>: 체포·구속된 피의자가 법원에 석방을 청구할 수 있다. (헷갈리는 짝: 구속 적부심은 피의자, 보석은 기소 후 피고인)' },
+];
+
+const FINAL = {
+  order: ['수사 개시', '검찰 송치', '공소 제기(기소)', '공판', '판결 선고'],
+  q: '법정 앞에서 기자가 외친다. "범인 한결, 할 말 있습니까?" — 이 기자가 무시한 원칙은?',
+  opts: ['죄형 법정주의', '무죄 추정의 원칙', '소급효 금지의 원칙', '자구 행위'],
+  ans: 1,
+  word: '적법절차',
+  epilogue: '한결은 무죄를 선고받았다. 그런데 무죄가 확정될 때까지 구치소에 갇혀 있었다. 한결이 국가를 상대로 구금에 대한 보상을 청구할 수 있는 제도는?',
+  epOpts: ['형사 보상 제도', '범죄 피해자 구조 제도', '배상 명령 제도', '선고 유예'],
+  epAns: 0,
+};
+
+// ---------------------------------------------------------------- 상태 (이 기기에 저장)
+const KEY = 'escape-suspect-v1';
+const fresh = () => ({ team: '', start: 0, room: -1, step: 0, keys: [], hints: 0, wrong: 0, usedHint: {}, seq: [], end: 0, lockUntil: 0, lockText: '', overtime: false });
+// 저장 공간이 막힌 브라우저(사생활 보호 모드 등)에서도 화면은 뜨게 — 저장만 건너뛴다
+const store = { get() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { return {}; } },
+  set(v) { try { localStorage.setItem(KEY, v); } catch { /* 저장 못 해도 게임은 계속 */ } },
+  clear() { try { localStorage.removeItem(KEY); } catch { /* 무시 */ } } };
+let S = Object.assign(fresh(), store.get());
+const save = () => store.set(JSON.stringify(S));
+const $ = (h) => { const d = document.createElement('div'); d.innerHTML = h; return d.firstElementChild; };
+const app = document.getElementById('app');
+const shuffle = (a) => a.map((v) => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map((x) => x[1]);
+
+function elapsed() { return Math.floor(((S.end || Date.now()) - S.start) / 1000); }
+function fmt(sec) { const m = Math.floor(Math.abs(sec) / 60), s = Math.abs(sec) % 60; return (sec < 0 ? '-' : '') + m + ':' + String(s).padStart(2, '0'); }
+
+function bar() {
+  const left = LIMIT_MIN * 60 - elapsed();
+  const keys = ['적', '법', '절', '차'].map((k) => `<div class="key ${S.keys.includes(k) ? 'got' : ''}">${S.keys.includes(k) ? k : '?'}</div>`).join('');
+  return `<div class="bar"><div>👥 <b>${esc(S.team)}</b> · 남은 시간 <b id="clock">${fmt(left)}</b> · 힌트 ${MAX_HINTS - S.hints}개</div><div class="keys">${keys}</div></div>`;
+}
+function esc(t) { return String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+// 잠금이 끝나는 시각을 저장한다 — 새로고침해도 남은 시간만큼 잠긴 채로 (11-03 서지안 지적)
+function lock(text) {
+  S.wrong++; S.lockUntil = Date.now() + LOCK_SEC * 1000; S.lockText = text; save();
+  showLock();
+}
+let lockTimer = null;
+function showLock() {
+  const L = document.getElementById('lock');
+  clearInterval(lockTimer);
+  const tick = () => {
+    const n = Math.ceil((S.lockUntil - Date.now()) / 1000);
+    if (n <= 0) { L.style.display = 'none'; clearInterval(lockTimer); return; }
+    L.style.display = 'flex';
+    document.getElementById('lockText').innerHTML = `${esc(S.lockText)}<br>${n}초 뒤에 다시 도전!<br><span style="font-size:17px;font-weight:600">모둠원과 근거를 먼저 이야기해 보세요.</span>`;
+  };
+  tick(); lockTimer = setInterval(tick, 250);
+}
+
+function hintBox(id, text) {
+  const used = S.usedHint[id];
+  return `<button class="btn ghost" id="hintBtn">💡 힌트 보기 (남은 힌트 ${MAX_HINTS - S.hints}개)</button><div class="hint" id="hint" style="display:${used ? 'block' : 'none'}">${text}</div>`;
+}
+function wireHint(id) {
+  const b = document.getElementById('hintBtn');
+  b.onclick = () => {
+    if (S.usedHint[id]) return;
+    if (S.hints >= MAX_HINTS) { alert('힌트를 모두 썼어요. 교과서 쪽수를 펼쳐 보세요!'); return; }
+    S.hints++; S.usedHint[id] = true; save(); render();
+  };
+}
+
+// ---------------------------------------------------------------- 화면
+function render() {
+  if (S.room === -1) return intro();
+  if (S.end) return finish();
+  if (!S.overtime && elapsed() >= LIMIT_MIN * 60) return timeUp();
+  if (S.room < ROOMS.length) return room(ROOMS[S.room]);
+  return finalRoom();
+}
+
+function intro() {
+  app.innerHTML = '';
+  const c = $(`<div class="card">
+    <span class="room-tag">법과 사회 · 형사 절차와 인권 보장</span>
+    <h1>억울한 피의자를 구하라</h1>
+    <div class="story">고등학생 <b>한결</b>(가상 인물)이 편의점 절도범으로 몰렸다. 여러분은 한결의 <b>국선 변호인 팀</b>이다.<br>
+    수사 기록 속 <b>위법한 절차</b>를 찾아 방 5개를 탈출하고 한결을 구하라!</div>
+    <p>📌 방마다 <b>열쇠 글자</b>를 하나씩 얻습니다. 마지막 방에서 네 글자를 모두 맞혀야 탈출!</p>
+    <p>⏱ 제한 시간 ${LIMIT_MIN}분 · 💡 힌트 ${MAX_HINTS}번 · ❌ 틀리면 ${LOCK_SEC}초 잠김</p>
+    <p class="q">우리 모둠 이름</p>
+    <input class="word" id="team" style="letter-spacing:2px;font-size:22px;width:100%" maxlength="12" placeholder="예: 3모둠 정의의 변호인">
+    <div><button class="btn warm" id="go">방탈출 시작!</button></div>
+    <button class="btn ghost" id="reset">처음부터 다시 (선생님용)</button>
+  </div>`);
+  app.append(c);
+  c.querySelector('#go').onclick = () => {
+    const t = c.querySelector('#team').value.trim();
+    if (!t) { alert('모둠 이름을 적어 주세요.'); return; }
+    S = fresh(); S.team = t; S.start = Date.now(); S.room = 0; save(); render();
+  };
+  c.querySelector('#reset').onclick = resetAll;
+}
+
+function resetAll() { if (confirm('이 태블릿의 진행 기록을 지우고 처음부터 시작할까요?')) { store.clear(); S = fresh(); render(); } }
+
+function room(R) {
+  app.innerHTML = bar();
+  const needFind = R.bad >= 0 && S.step === 0;
+  const c = $(`<div class="card">
+    <span class="room-tag">${R.tag} · ${R.title}</span> <span class="page-ref">${R.page}</span>
+    <div class="story" style="margin-top:14px">${R.story}</div>
+    ${needFind ? `<p class="q">① 수사 기록에서 <u>위법한 절차</u>가 적힌 줄을 터치하세요.</p>` : `<p class="q">${R.bad >= 0 ? '② ' : ''}${R.q2}</p>`}
+    <div id="area"></div>
+    <div class="msg" id="msg"></div>
+    ${hintBox('r' + S.room + 's' + (needFind ? 0 : 1), R.hint)}
+  </div>`);
+  app.append(c);
+  const area = c.querySelector('#area');
+  if (needFind || R.bad < 0) {
+    const rec = $(`<div class="record"><div class="head">📄 수사 기록</div></div>`);
+    R.record.forEach((line, i) => {
+      const b = $(`<button class="opt">${line}</button>`);
+      if (!needFind) { b.disabled = true; b.style.cursor = 'default'; }
+      b.onclick = () => {
+        if (i === R.bad) { S.step = 1; save(); render(); }
+        else { b.classList.add('bad'); lock('그 줄은 적법한 절차예요.'); setTimeout(() => b.classList.remove('bad'), 1200); }
+      };
+      rec.append(b);
+    });
+    area.append(rec);
+    if (!needFind) area.append($('<div style="height:12px"></div>'));
+  }
+  if (!needFind) {
+    if (R.bad >= 0) area.prepend($(`<div class="record" style="margin-bottom:12px"><div class="head">✅ 찾아낸 위법</div><div class="opt done" style="cursor:default">${R.record[R.bad]}</div></div>`));
+    const opts = $('<div class="opts"></div>');
+    // 보기 순서는 태블릿마다 섞는다 — 모둠끼리 "①번이 답"을 주고받지 못하게
+    shuffle(R.opts.map((o, i) => i)).forEach((i, k) => {
+      const b = $(`<button class="opt">${String.fromCharCode(9312 + k)} ${R.opts[i]}</button>`);
+      b.onclick = () => {
+        if (i === R.ans) { S.keys.push(R.key); S.room++; S.step = 0; save(); solved(R); }
+        else { b.classList.add('bad'); lock('다시 생각해 보세요.'); setTimeout(() => b.classList.remove('bad'), 1200); }
+      };
+      opts.append(b);
+    });
+    area.append(opts);
+  }
+  wireHint('r' + S.room + 's' + (needFind ? 0 : 1));
+}
+
+function solved(R) {
+  app.innerHTML = bar();
+  const c = $(`<div class="card center">
+    <div class="big">🗝️</div>
+    <h2>${R.tag} 탈출! 열쇠 글자 「${R.key}」 획득</h2>
+    <div class="learn" style="text-align:left">${R.learn}</div>
+    <button class="btn" id="next">다음 방으로 →</button>
+  </div>`);
+  app.append(c);
+  c.querySelector('#next').onclick = render;
+}
+
+function finalRoom() {
+  app.innerHTML = bar();
+  const st = S.step;
+  const c = $(`<div class="card">
+    <span class="room-tag">방 5 · 법정</span> <span class="page-ref">교과서 78~81쪽</span>
+    <div class="story" style="margin-top:14px">드디어 한결의 재판 날. 하지만 법정 문은 세 겹의 자물쇠로 잠겨 있다.</div>
+    <div id="area"></div><div class="msg" id="msg"></div>
+    ${hintBox('final' + st, ['수사 기관이 조사 → 경찰이 검찰로 넘김 → 검사가 법원에 재판 신청 → 재판 → 판결 순서예요. (교과서 78~79쪽 흐름도)', '유죄 판결이 확정될 때까지 피고인은 어떻게 대우받아야 할까요?', '네 방에서 얻은 글자를 순서대로! 형사 절차 전체를 지배하는 원칙의 이름이에요. (교과서 80쪽 첫 문단)', '구금되었다가 무죄 판결을 받은 사람이 국가에 청구하는 제도예요. (교과서 81쪽)'][st])}
+  </div>`);
+  app.append(c);
+  const area = c.querySelector('#area'); const msg = c.querySelector('#msg');
+  if (st === 0) {
+    area.append($(`<p class="q">자물쇠 ① 형사 절차를 순서대로 터치하세요.</p>`));
+    const seq = $('<div class="seq"></div>'); area.append(seq);
+    const box = $('<div class="opts"></div>'); area.append(box);
+    let picked = [];
+    shuffle(FINAL.order).forEach((step) => {
+      const b = $(`<button class="opt">${step}</button>`);
+      b.onclick = () => {
+        if (picked.includes(step)) return;
+        if (step !== FINAL.order[picked.length]) { picked = []; seq.innerHTML = ''; box.querySelectorAll('.opt').forEach((x) => x.classList.remove('sel')); lock('순서가 틀렸어요. 처음부터!'); return; }
+        picked.push(step); b.classList.add('sel'); seq.append($(`<span class="chip">${picked.length}. ${step}</span>`));
+        if (picked.length === FINAL.order.length) { S.step = 1; save(); setTimeout(render, 600); }
+      };
+      box.append(b);
+    });
+  } else if (st === 1) {
+    area.append($(`<p class="q">자물쇠 ② ${FINAL.q}</p>`));
+    const box = $('<div class="opts"></div>'); area.append(box);
+    shuffle(FINAL.opts.map((o, i) => i)).forEach((i, k) => {
+      const b = $(`<button class="opt">${String.fromCharCode(9312 + k)} ${FINAL.opts[i]}</button>`);
+      b.onclick = () => { if (i === FINAL.ans) { S.step = 2; save(); render(); } else lock('다시 생각해 보세요.'); };
+      box.append(b);
+    });
+  } else if (st === 2) {
+    area.append($(`<p class="q">자물쇠 ③ 열쇠 글자 네 개로 원칙의 이름을 완성하세요.</p>`));
+    area.append($(`<p>"누구든지 법률에 규정된 절차에 따르지 않고는 처벌할 수 없다." — 이 원칙은?</p>`));
+    const row = $(`<div class="center"><input class="word" id="w" maxlength="4" autocomplete="off"><br><button class="btn warm" id="ok">법정 문 열기</button></div>`);
+    area.append(row);
+    row.querySelector('#ok').onclick = () => {
+      const v = row.querySelector('#w').value.replace(/\s/g, '');
+      if (v === FINAL.word) { S.step = 3; save(); render(); } else lock('그 단어가 아니에요.');
+    };
+  } else {
+    area.append($(`<div class="learn"><b>적법 절차의 원칙</b> 덕분에 한결은 공정한 재판을 받았습니다. 위법하게 얻은 자백과 증거는 모두 증거에서 빠졌어요.</div>`));
+    area.append($(`<p class="q">마지막 질문 — ${FINAL.epilogue}</p>`));
+    const box = $('<div class="opts"></div>'); area.append(box);
+    shuffle(FINAL.epOpts.map((o, i) => i)).forEach((i, k) => {
+      const b = $(`<button class="opt">${String.fromCharCode(9312 + k)} ${FINAL.epOpts[i]}</button>`);
+      b.onclick = () => { if (i === FINAL.epAns) { S.end = Date.now(); save(); render(); } else lock('다시 생각해 보세요.'); };
+      box.append(b);
+    });
+  }
+  wireHint('final' + st);
+}
+
+// 제한 시간이 끝나면 진행을 멈추고 결과를 보여 준다. 배움을 끝까지 하도록 '마저 풀기'는 남기되 기록엔 시간 초과로 남는다.
+function timeUp() {
+  app.innerHTML = '';
+  const c = $(`<div class="card center">
+    <div class="big">⏰</div>
+    <h1>시간 종료!</h1>
+    <p>국선 변호인 팀 <b>${esc(S.team)}</b>의 ${LIMIT_MIN}분 기록입니다. 이 화면을 선생님께 보여 주세요.</p>
+    <table class="res">
+      <tr><td>🗝️ 모은 열쇠</td><td><b>${S.keys.length}</b> / 4 ${S.keys.length ? '(' + S.keys.join('') + ')' : ''}</td></tr>
+      <tr><td>🚪 도착한 방</td><td><b>방 ${Math.min(S.room + 1, 5)}</b></td></tr>
+      <tr><td>💡 쓴 힌트</td><td><b>${S.hints}</b>개</td></tr>
+      <tr><td>❌ 틀린 횟수</td><td><b>${S.wrong}</b>번</td></tr>
+    </table>
+    <button class="btn" id="more">남은 방 마저 풀기 (기록: 시간 초과)</button><br>
+    <button class="btn ghost" id="reset">처음부터 다시 (선생님용)</button>
+  </div>`);
+  app.append(c);
+  c.querySelector('#more').onclick = () => { S.overtime = true; save(); render(); };
+  c.querySelector('#reset').onclick = resetAll;
+}
+
+function finish() {
+  app.innerHTML = '';
+  const t = elapsed();
+  // 성공 여부는 실제 걸린 시간으로 판단한다 — 종료 화면이 뜨기 직전 1초 안에 누른 정답도 시간 초과로 (11-03 서지안 지적)
+  const late = S.overtime || S.end - S.start > LIMIT_MIN * 60 * 1000; // 초를 버림하면 25:00.5가 '25:00'으로 통과해 버린다 → 밀리초로 비교
+  const c = $(`<div class="card center">
+    <div class="big">${late ? '⏰' : '🎉'}</div>
+    <h1>${late ? '시간 초과 탈출' : '탈출 성공!'}</h1>
+    <p>한결을 구했습니다. 국선 변호인 팀 <b>${esc(S.team)}</b> 수고했어요!</p>
+    <table class="res">
+      <tr><td>⏱ 탈출 시간</td><td><b>${fmt(t)}</b> ${late ? '(시간 초과)' : ''}</td></tr>
+      <tr><td>💡 쓴 힌트</td><td><b>${S.hints}</b>개</td></tr>
+      <tr><td>❌ 틀린 횟수</td><td><b>${S.wrong}</b>번</td></tr>
+      <tr><td>🕒 끝난 시각</td><td>${new Date(S.end).toLocaleTimeString('ko-KR')}</td></tr>
+    </table>
+    <div class="learn" style="text-align:left">오늘 찾은 권리: <b>미란다 원칙 · 진술 거부권과 자백의 증거 능력 · 영장주의와 위법 수집 증거 배제 · 구속 적부심 · 무죄 추정 · 형사 보상</b></div>
+    <p style="font-size:17px;color:#6B7280">이 화면을 선생님께 보여 주세요.</p>
+    <button class="btn ghost" id="reset">처음부터 다시 (선생님용)</button>
+  </div>`);
+  app.append(c);
+  c.querySelector('#reset').onclick = resetAll;
+}
+
+// 남은 시간 표시
+setInterval(() => {
+  const el = document.getElementById('clock');
+  if (!el || S.end) return;
+  const left = LIMIT_MIN * 60 - elapsed();
+  el.textContent = fmt(left); el.style.color = left < 0 ? '#FF8A8A' : '';
+  if (left <= 0 && !S.overtime) render(); // 시간이 다 되면 그 자리에서 멈춤
+}, 1000);
+render();
+if (S.lockUntil > Date.now()) showLock();
+</script>
+</body>
+</html>
