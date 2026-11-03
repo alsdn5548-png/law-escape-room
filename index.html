@@ -397,7 +397,7 @@ function intro() {
     const t = c.querySelector('#team').value.trim();
     if (!t) { alert('모둠 이름을 적어 주세요.'); return; }
     Snd.start();
-    S = fresh(); S.team = t; S.avatar = av; S.start = Date.now(); S.room = 0; save(); render();
+    S = fresh(); S.team = t; S.avatar = av; S.start = Date.now(); S.room = 0; Snd.tempo = 92; save(); render();
   };
   c.querySelector('#reset').onclick = resetAll;
 }
@@ -598,7 +598,7 @@ setInterval(() => {
   if (!el || S.end) return;
   const left = LIMIT_MIN * 60 - elapsed();
   el.textContent = fmt(left); el.classList.toggle('danger', left < 300);
-  if (left < 300 && Snd.tempo !== 118) Snd.tempo = 118; // 5분 남으면 음악이 빨라진다
+  Snd.tempo = left < 300 ? 118 : 92; // 5분 남으면 빨라지고, 새 게임이면 다시 보통 속도 (한 번 올리고 끝내면 다음 모둠까지 빠른 채로 남음 — 11-03 서지안 지적)
   if (left <= 0 && !S.overtime) render(); // 시간이 다 되면 그 자리에서 멈춤
 }, 1000);
 render();
