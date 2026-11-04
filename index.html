@@ -132,7 +132,7 @@
 'use strict';
 // ---------------------------------------------------------------- 설정
 // 앱스크립트 웹 앱 주소 (선생님이 배포한 뒤 채운다). 비어 있으면 대시보드 없이 이 기기 안에서만 진행된다.
-const API = '';
+const API = 'https://script.google.com/macros/s/AKfycbxIPsuikM78pev-9ikc012NWqH4ZCWkV0RXZzU3u_5JVKug8sRkk9av-bpGNEnSu7w/exec';
 const LOCK_SEC = 10;
 const DEFAULT_TEAMS = ['1모둠', '2모둠', '3모둠', '4모둠', '5모둠', '6모둠', '7모둠', '8모둠'];
 const HINT_SPOT = [90, 84];
@@ -241,8 +241,13 @@ async function flush() {
     let list = store.get(PENDING).list || [];
     while (list.length) {
       const ev = list[0];
-      try { const r = await fetch(API, { method: 'POST', body: JSON.stringify(ev) }); await r.json(); } catch { break; }
-      list = list.slice(1); store.set(JSON.stringify({ list }), PENDING);
+      try {
+        const r = await fetch(API, { method: 'POST', body: JSON.stringify(ev) });
+        const result = await r.json();
+        if (!result.ok && !['old-session', 'no-team'].includes(result.error)) break;
+      } catch { break; }
+      list = (store.get(PENDING).list || []).slice(1);
+      store.set(JSON.stringify({ list }), PENDING);
     }
   } finally { flushing = false; }
 }
@@ -467,7 +472,9 @@ function ensureTeam(next) {
 }
 
 // ---------------------------------------------------------------- 수사 현황 (QR 없이 열었을 때)
+let viewingHome = false;
 function home() {
+  viewingHome = true;
   closeSheet();
   if (S.end) return finish();
   app.innerHTML = hud(); wireHud();
@@ -483,6 +490,7 @@ function home() {
 
 // ---------------------------------------------------------------- 증거물 QR
 function station(no) {
+  viewingHome = false;
   const Q = QS[no]; closeSheet();
   if (!Q) return home();
   if (S.end) return finish();
@@ -558,6 +566,7 @@ function solve(no) {
 
 // ---------------------------------------------------------------- 최종 변론 법정
 function finalCourt() {
+  viewingHome = false;
   if (Object.keys(teamSolved()).length < 10) return home();
   app.innerHTML = hud();
   const stage = $(stageHTML(4, '최종 변론 법정')); app.append(stage); wireHud();
@@ -583,6 +592,7 @@ function finalCourt() {
   };
 }
 function finish() {
+  viewingHome = false;
   closeSheet(); app.innerHTML = '';
   const late = S.end - startAt() > CFG.limitMin * 60 * 1000; const t = elapsedSec();
   const c = $(`<div class="title-card"><div style="width:120px;margin:0 auto">${heroSVG(S.avatar)}</div>
@@ -656,7 +666,14 @@ setInterval(() => {
 }, 1000);
 setInterval(async () => { // 같은 모둠 다른 기기가 푼 것도 반영
   if (!API || params.has('board') || params.has('teacher') || !S.team) return;
-  const b = await apiGet('board'); if (b && b.ok && b.session === CFG.session) BOARD = b; flush();
+  const b = await apiGet('board');
+  if (b && b.ok && b.session) {
+    if (b.session !== CFG.session) { location.reload(); return; }
+    const changed = JSON.stringify(BOARD && BOARD.progress) !== JSON.stringify(b.progress);
+    BOARD = b; CFG.start = b.start; CFG.limitMin = b.limitMin;
+    if (changed && viewingHome && !document.getElementById('sheet')) home();
+  }
+  flush();
 }, 15000);
 (async () => {
   if (params.has('board')) return board();
