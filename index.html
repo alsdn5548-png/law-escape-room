@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>방탈출 · 억울한 피의자를 구하라</title>
-<!-- 법과 사회 Ⅱ-03 형법과 형사 절차 (비상교육 교과서 78~81쪽) · 2026-11-03 오태식 제작 (v2: 방 장면·캐릭터·BGM)
-     파일 하나로 동작(인터넷·설치 필요 없음). 배경음은 브라우저가 직접 만든다(음원 파일 없음 → 저작권 걱정 없음).
-     진행 상황은 이 기기 브라우저에 저장되어 새로고침해도 이어진다. 선생님 초기화: 첫 화면·끝 화면 '처음부터 다시'. -->
+<!-- 법과 사회 Ⅱ-03 형법과 형사 절차 (비상교육 교과서 72~81쪽) · v3 (2026-11-04 오태식): 교실 QR 10개 순서 자유 · 모둠별 실시간 대시보드
+     ?qr=1~10 증거물 · (주소만) 수사 현황·최종 변론 · ?board 칠판 대시보드 · ?teacher 선생님 설정
+     대시보드 서버 = 수업연구부/방탈출_대시보드_앱스크립트.gs (API가 비어 있으면 기기 안에서만 진행) -->
 <style>
   :root { --ink:#14161F; --ink2:#1E2231; --accent:#3E5C87; --soft:#EEF2F7; --warm:#C17A54; --gold:#F3C9A8; --red:#D0021B; --ok:#2E8B57; }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none; }
@@ -93,6 +93,36 @@
   .toast { position:fixed; left:50%; top:18%; transform:translateX(-50%); z-index:30; background:rgba(14,16,24,.92); border:2px solid var(--gold); color:#fff; padding:14px 22px; border-radius:16px; font-size:20px; font-weight:900; animation:pop .3s; }
   @keyframes pop { from { transform:translateX(-50%) scale(.7); opacity:0; } }
   .flykey { position:fixed; z-index:35; font-size:54px; transition:all .9s cubic-bezier(.5,-0.3,.6,1); pointer-events:none; }
+
+  .teams { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin:8px 0 14px; }
+  .tm { font-family:inherit; font-size:20px; font-weight:900; padding:14px 18px; min-width:120px; border-radius:14px; border:2px solid #3A4157; background:#262B3D; color:#fff; cursor:pointer; }
+  .cases { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin:12px 0; }
+  .case { background:#1E2231; border:2px dashed #3A4157; border-radius:16px; padding:10px 6px; text-align:center; }
+  .case.ok { border:2px solid #2E8B57; background:#16301F; }
+  .case .no { font-size:13px; color:#9AA3B5; font-weight:800; } .case .em { font-size:34px; } .case .nm { font-size:14px; font-weight:800; } .case .cl { font-size:13px; color:#D5DBE6; } .case .cl b { color:#F3C9A8; font-size:16px; }
+  @media (max-width:600px) { .cases { grid-template-columns:repeat(2,1fr); } }
+  .cluebox { background:#14161F; color:#fff; border-radius:16px; padding:14px; margin:10px auto; max-width:360px; }
+  .clueword { font-size:46px; font-weight:900; color:#F3C9A8; letter-spacing:4px; }
+  .oxrow { display:flex; align-items:center; gap:8px; border:2px solid #D9DEE7; border-radius:14px; padding:10px 12px; }
+  .oxt { flex:1; font-size:17px; line-height:1.5; }
+  .ox { width:54px; height:48px; border-radius:12px; border:2px solid #D9DEE7; background:#fff; font-size:22px; font-weight:900; cursor:pointer; }
+  .ox.on { background:#3E5C87; color:#fff; border-color:#3E5C87; }
+  .final { font-size:20px; line-height:2.3; }
+  .blank { font-family:inherit; font-size:18px; font-weight:900; min-width:90px; padding:4px 10px; border:0; border-bottom:3px solid #C17A54; background:#F8EEE6; border-radius:8px; cursor:pointer; color:#14161F; }
+  .blank.on { outline:3px solid #3E5C87; } .blank.filled { color:#3E5C87; }
+  .bank { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+  .word { font-family:inherit; font-size:18px; font-weight:800; padding:10px 14px; border-radius:999px; border:2px solid #3E5C87; background:#EEF2F7; color:#14161F; cursor:pointer; }
+  .btn:disabled { background:#5B6275; box-shadow:none; }
+  label { display:block; margin:10px 0; font-weight:800; } label .team, label input { display:block; margin-top:6px; }
+  .names { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:8px; } .names .team { width:100%; }
+  body.wide #app { max-width:1800px; }
+  .board { padding:10px 18px; } .bhead { display:flex; justify-content:space-between; align-items:flex-end; }
+  .board h1 { font-size:44px; margin:4px 0 12px; } .bclock { font-size:56px; font-weight:900; color:#F3C9A8; }
+  .bclock.danger { color:#FF8A8A; animation:blink 1s infinite; }
+  table.bt { width:100%; border-collapse:separate; border-spacing:4px; font-size:22px; }
+  .bt th { color:#9AA3B5; font-size:18px; } .bt td { background:#1E2231; border-radius:8px; height:52px; text-align:center; font-weight:900; }
+  .bt td.ok { background:#2E8B57; } .bt td.fin { background:#C17A54; } .bt td.tn { text-align:left; padding:0 14px; white-space:nowrap; } .bt td.tn small { color:#9AA3B5; font-size:15px; }
+  .bfoot { color:#9AA3B5; text-align:center; font-size:18px; }
 </style>
 </head>
 <body>
@@ -100,76 +130,133 @@
 <div class="lock" id="lock"><div class="big">🔒</div><div id="lockText"></div></div>
 <script>
 'use strict';
-// ---------------------------------------------------------------- 내용 (교과서 78~81쪽 기반, 인물은 허구)
-const LIMIT_MIN = 25;      // 제한 시간(분)
-const LOCK_SEC = 10;       // 틀리면 잠기는 시간
-const MAX_HINTS = 3;
+// ---------------------------------------------------------------- 설정
+// 앱스크립트 웹 앱 주소 (선생님이 배포한 뒤 채운다). 비어 있으면 대시보드 없이 이 기기 안에서만 진행된다.
+const API = '';
+const LOCK_SEC = 10;
+const DEFAULT_TEAMS = ['1모둠', '2모둠', '3모둠', '4모둠', '5모둠', '6모둠', '7모둠', '8모둠'];
+const HINT_SPOT = [90, 84];
 
-const ROOMS = [
-  { key: '적', tag: '방 1', title: '체포 현장', page: '교과서 80쪽',
-    story: '밤 9시, 편의점 앞. 경찰관 두 명이 한결(고2, 가상 인물)에게 다가왔다. "편의점 절도 신고가 들어왔다." 한결은 "저 아니에요!"라고 외쳤다.',
-    record: ['오후 9:02 신고 접수: 편의점에서 이어폰 1개 도난', '오후 9:10 경찰관이 한결에게 다가가 신분증을 요구함', '오후 9:11 경찰관이 아무 설명 없이 한결에게 수갑을 채우고 순찰차에 태움', '오후 9:30 경찰서 도착, 한결의 부모에게 연락함'],
-    bad: 2,
-    q2: '이 장면에서 경찰이 지키지 않은 것은?',
-    opts: ['미란다 원칙 — 체포할 때 진술 거부권과 변호인을 선임할 수 있다는 것을 알려야 함', '공개 재판주의 — 재판은 공개해야 함', '불이익 변경 금지 — 피고인만 항소하면 더 무거운 형을 줄 수 없음', '일사부재리 — 확정된 사건은 다시 재판하지 않음'],
-    ans: 0,
+// ---------------------------------------------------------------- 증거물 10개 (교과서 72~81쪽, 인물은 허구)
+const QS = {
+  1: { item: '체포 보고서', em: '📄', scene: 0, spot: [50, 62], page: '교과서 80쪽', clue: '미란다', type: 'find',
+    story: '밤 9시, 편의점 앞. 경찰관 두 명이 한결(고2, 가상 인물)에게 다가왔다. "편의점 절도 신고가 들어왔다."',
+    record: ['오후 9:02 신고 접수: 편의점에서 이어폰 1개 도난', '오후 9:10 경찰관이 한결에게 다가가 신분증을 요구함', '오후 9:11 경찰관이 아무 설명 없이 한결에게 수갑을 채우고 순찰차에 태움', '오후 9:30 경찰서 도착, 한결의 부모에게 연락함'], bad: 2,
+    q: '이 장면에서 경찰이 지키지 않은 것은?',
+    opts: ['미란다 원칙 — 체포할 때 진술 거부권과 변호인을 선임할 수 있다는 것을 알려야 함', '공개 재판주의 — 재판은 공개해야 함', '불이익 변경 금지 — 피고인만 항소하면 더 무거운 형을 줄 수 없음', '일사부재리 — 확정된 사건은 다시 재판하지 않음'], ans: 0,
     hint: '체포할 때 수사 기관이 "미리 알려 줄 의무"가 있는 권리가 있어요. 「형사 소송법」 제244조의3.',
     learn: '<b>미란다 원칙</b>: 수사 기관은 피의자를 체포하거나 신문할 때 진술 거부권, 변호인의 조력을 받을 권리 등을 미리 알려야 한다.' },
-  { key: '법', tag: '방 2', title: '조사실', page: '교과서 80쪽',
+  2: { item: '조사실 녹취록', em: '📼', scene: 1, spot: [50, 56], page: '교과서 80쪽', clue: '자백', type: 'find',
     story: '경찰서 조사실. 한결은 계속 "훔치지 않았다"고 말했지만, 조사는 새벽까지 이어졌다.',
-    record: ['오후 10:00 조사 시작, 한결은 혐의를 부인함', '오전 1:00 형사가 "자백하면 바로 집에 보내 주겠다"고 함', '오전 3:30 지친 한결이 "제가 했어요"라고 진술서를 씀', '오전 9:00 한결의 부모가 변호사와 함께 경찰서에 도착함'],
-    bad: 1,
-    q2: '이렇게 받아 낸 자백이 "유일한 증거"라면 재판에서는?',
-    opts: ['자백했으니 그것만으로 유죄를 선고할 수 있다', '피고인의 자백만이 유일한 증거이면 유죄의 증거로 삼을 수 없다', '경찰이 받은 자백이므로 판사는 반드시 따라야 한다', '자백은 언제나 무효이므로 재판을 열 수 없다'],
-    ans: 1,
+    record: ['오후 10:00 조사 시작, 한결은 혐의를 부인함', '오전 1:00 형사가 "자백하면 바로 집에 보내 주겠다"고 함', '오전 3:30 지친 한결이 "제가 했어요"라고 진술서를 씀', '오전 9:00 한결의 부모가 변호사와 함께 경찰서에 도착함'], bad: 1,
+    q: '이렇게 받아 낸 자백이 "유일한 증거"라면 재판에서는?',
+    opts: ['자백했으니 그것만으로 유죄를 선고할 수 있다', '피고인의 자백만이 유일한 증거이면 유죄의 증거로 삼을 수 없다', '경찰이 받은 자백이므로 판사는 반드시 따라야 한다', '자백은 언제나 무효이므로 재판을 열 수 없다'], ans: 1,
     hint: '증거 재판주의를 떠올려 보세요. 자백 하나만 있을 때는 어떻게 될까요?',
-    learn: '<b>진술 거부권</b>: 누구든지 자신에게 불리한 진술을 거부할 수 있다. 증거 재판주의에 따라 <b>자백만이 유일한 증거이면 유죄의 증거로 삼지 않는다</b>.' },
-  { key: '절', tag: '방 3', title: '압수 · 수색', page: '교과서 80쪽',
+    learn: '<b>진술 거부권</b>: 자신에게 불리한 진술을 거부할 수 있다. 증거 재판주의에 따라 <b>자백만이 유일한 증거이면 유죄의 증거로 삼지 않는다</b>.' },
+  3: { item: '압수 목록', em: '📋', scene: 2, spot: [60, 48], page: '교과서 80쪽', clue: '영장', type: 'find',
     story: '다음 날 아침, 수사관들이 증거를 찾겠다며 한결의 집으로 갔다.',
-    record: ['오전 10:00 수사관 2명이 한결의 집을 방문함', '오전 10:05 영장 없이 집 안으로 들어가 한결의 휴대폰과 가방을 가져감', '오전 11:00 휴대폰 사진첩에서 편의점 근처 사진을 찾음', '오후 2:00 사진을 수사 기록에 증거로 붙임'],
-    bad: 1,
-    q2: '이 휴대폰 사진은 재판에서 유죄의 증거가 될 수 있을까?',
-    opts: ['될 수 있다 — 진짜 사진이므로 내용이 중요하다', '될 수 있다 — 수사관이 직접 찾았으므로 믿을 수 있다', '될 수 없다 — 영장 없이 위법하게 수집한 증거는 유죄의 증거로 인정하지 않는다', '될 수 없다 — 사진은 원래 증거가 될 수 없다'],
-    ans: 2,
+    record: ['오전 10:00 수사관 2명이 한결의 집을 방문함', '오전 10:05 영장 없이 집 안으로 들어가 한결의 휴대폰과 가방을 가져감', '오전 11:00 휴대폰 사진첩에서 편의점 근처 사진을 찾음', '오후 2:00 사진을 수사 기록에 증거로 붙임'], bad: 1,
+    q: '이 휴대폰 사진은 재판에서 유죄의 증거가 될 수 있을까?',
+    opts: ['될 수 있다 — 진짜 사진이므로 내용이 중요하다', '될 수 있다 — 수사관이 직접 찾았으므로 믿을 수 있다', '될 수 없다 — 영장 없이 위법하게 수집한 증거는 유죄의 증거로 인정하지 않는다', '될 수 없다 — 사진은 원래 증거가 될 수 없다'], ans: 2,
     hint: '압수·수색을 할 때 판사에게 반드시 받아야 하는 것이 있어요. 그것 없이 모은 증거는?',
     learn: '<b>영장주의</b>: 체포·구속·압수·수색은 판사가 발부한 영장이 있어야 한다. <b>위법하게 수집한 증거는 유죄의 증거로 인정하지 않는다</b>.' },
-  { key: '차', tag: '방 4', title: '구속의 갈림길', page: '교과서 78~80쪽',
-    story: '검사는 한결을 구속하겠다며 법원에 구속 영장을 청구했다. 한결은 구치소로 옮겨질 위기다.',
-    record: ['오후 3:00 검사가 법원에 구속 영장 발부를 청구함', '오후 4:00 판사가 한결을 만나 이야기를 직접 들음 (구속 전 피의자 심문)', '오후 6:00 판사가 구속 영장을 발부함', '다음 날 한결의 변호인이 "구속이 부당하다"고 판단함'],
-    bad: -1, // 이 방은 위법 찾기 대신 제도 고르기
-    q2: '변호인이 법원에 "구속이 적법하고 필요한지 다시 심사해서 석방해 달라"고 청구하는 제도는?',
-    opts: ['보석 제도', '구속 적부심 제도', '형사 보상 제도', '배상 명령 제도'],
-    ans: 1,
+  4: { item: '구속 영장 청구서', em: '📜', scene: 3, spot: [50, 50], page: '교과서 80쪽', clue: '적부심', type: 'choice',
+    story: '검사는 한결을 구속하겠다며 법원에 구속 영장을 청구했다. 판사는 한결을 직접 만나 이야기를 들은 뒤(구속 전 피의자 심문) 영장을 발부했다.',
+    q: '한결의 변호인이 법원에 "구속이 적법하고 필요한지 다시 심사해서 석방해 달라"고 청구하는 제도는?',
+    opts: ['보석 제도', '구속 적부심 제도', '형사 보상 제도', '배상 명령 제도'], ans: 1,
     hint: '체포·구속된 "피의자"가 법원에 재심사를 청구하는 제도예요. 보석은 기소된 뒤 "피고인"이 보증금을 내는 제도랍니다.',
-    learn: '<b>구속 전 피의자 심문</b>: 판사가 피의자를 직접 만나 구속 여부를 결정한다. <b>구속 적부심</b>: 체포·구속된 피의자가 법원에 석방을 청구할 수 있다. (헷갈리는 짝: 구속 적부심은 피의자, 보석은 기소 후 피고인)' },
-];
-
-const FINAL = {
-  order: ['수사 개시', '검찰 송치', '공소 제기(기소)', '공판', '판결 선고'],
-  q: '법정 앞에서 기자가 외친다. "범인 한결, 할 말 있습니까?" — 이 기자가 무시한 원칙은?',
-  opts: ['죄형 법정주의', '무죄 추정의 원칙', '소급효 금지의 원칙', '자구 행위'],
-  ans: 1,
-  word: '적법절차',
-  epilogue: '한결은 무죄를 선고받았다. 그런데 무죄가 확정될 때까지 구치소에 갇혀 있었다. 한결이 국가를 상대로 구금에 대한 보상을 청구할 수 있는 제도는?',
-  epOpts: ['형사 보상 제도', '범죄 피해자 구조 제도', '배상 명령 제도', '선고 유예'],
-  epAns: 0,
+    learn: '<b>구속 적부심</b>: 체포·구속된 피의자와 변호인이 법원에 석방을 청구할 수 있다. (헷갈리는 짝: 구속 적부심은 피의자, <b>보석</b>은 기소 후 피고인)' },
+  5: { item: '사건 진행표', em: '📅', scene: 3, spot: [30, 66], page: '교과서 78~79쪽', clue: '공소', type: 'order',
+    story: '법원 서류함에서 한결 사건의 진행표가 나왔다. 그런데 순서가 뒤죽박죽 섞여 있다.',
+    q: '형사 절차를 순서대로 터치하세요.', steps: ['수사 개시', '검찰 송치', '공소 제기(기소)', '공판', '판결 선고'],
+    hint: '수사 기관이 조사 → 경찰이 검찰로 넘김 → 검사가 법원에 재판 신청 → 재판 → 판결 순서예요.',
+    learn: '<b>공소 제기(기소)</b>: 검사가 법원에 재판을 신청하는 것. 기소가 되어야 공판(형사 재판)이 시작된다.' },
+  6: { item: '신분 변경 서류', em: '📑', scene: 4, spot: [50, 48], page: '교과서 78~80쪽', clue: '피고인', type: 'ox',
+    story: '법원 서류에 적힌 한결의 호칭이 단계마다 달라진다. 맞는 문장에는 O, 틀린 문장에는 X!',
+    q: '세 문장 모두 맞게 고르면 단서가 나옵니다.',
+    items: [['경찰이 수사하는 동안 한결은 "피의자"다.', true], ['검사가 공소를 제기하면 한결은 "피고인"이 된다.', true], ['유죄 판결이 확정되기 전이라도 한결을 "범죄자"로 대해도 된다.', false]],
+    hint: '수사 대상은 피의자, 공소가 제기되면 피고인. 그리고 판결이 확정될 때까지는…?',
+    learn: '<b>피의자 → 피고인</b>: 수사 단계에서는 피의자, 공소가 제기되면 피고인 신분이 되어 검사와 함께 재판의 당사자가 된다.' },
+  7: { item: '신문 기사', em: '📰', scene: 4, spot: [68, 76], page: '교과서 80쪽', clue: '무죄', type: 'choice',
+    story: '법정 앞. 한 기자가 마이크를 들이밀며 외친다. "범인 한결, 할 말 있습니까?" 다음 날 신문 제목도 "편의점 도둑 고교생"이었다.',
+    q: '이 기자와 신문이 무시한 원칙은?', opts: ['죄형 법정주의', '무죄 추정의 원칙', '소급효 금지의 원칙', '자구 행위'], ans: 1,
+    hint: '유죄 판결이 확정될 때까지 피고인은 어떻게 대우받아야 할까요?',
+    learn: '<b>무죄 추정의 원칙</b>: 피의자와 피고인은 유죄 판결이 확정될 때까지 무죄로 추정된다.' },
+  8: { item: 'CCTV 기록', em: '📹', scene: 0, spot: [26, 70], page: '교과서 74~75쪽', clue: '고의', type: 'choice',
+    story: '편의점 CCTV를 다시 보니, 한결은 이어폰을 장바구니에 넣고 계산대로 가다가 친구 전화를 받고 이어폰만 깜빡 계산하지 못한 채 나갔다. 30분 뒤 스스로 돌아와 계산하려 했다.',
+    q: '범죄 성립 3단계 중 어디에서 범죄가 성립하지 않을까?',
+    opts: ['구성 요건 해당성 — 훔치려는 고의가 없었다', '위법성 — 정당방위였다', '책임 — 14세 미만이다', '세 단계를 모두 충족해 범죄가 성립한다'], ans: 0,
+    hint: '구성 요건 해당성 단계에서는 형법 규정에 맞는 행위인지와 함께 원칙적으로 "그 행위를 하겠다는 마음"이 있었는지를 봐요.',
+    learn: '<b>범죄 성립 3단계</b>: 구성 요건 해당성 → 위법성 → 책임. 하나라도 충족하지 않으면 범죄가 성립하지 않는다. 구성 요건 해당성에는 원칙적으로 <b>고의</b>가 필요하다.' },
+  9: { item: '형사의 메모', em: '📝', scene: 1, spot: [22, 52], page: '교과서 72쪽', clue: '법률', type: 'choice',
+    story: '형사 책상 위 메모: "절도죄로는 어렵겠다. 법에는 없지만 우리 동네에선 \'물건을 오래 들고 있던 사람\'도 관행상 처벌해 왔으니 그걸로 하자."',
+    q: '이 메모대로 처벌하면 어기게 되는 원칙은?',
+    opts: ['관습 형법 금지의 원칙 (죄형 법정주의)', '일사부재리 원칙', '불이익 변경 금지의 원칙', '공개 재판주의'], ans: 0,
+    hint: '"○○이 없으면 범죄도 없고 형벌도 없다." 처벌은 관습이 아니라 무엇으로 정해야 할까요?',
+    learn: '<b>죄형 법정주의</b>: 범죄와 형벌은 미리 성문의 <b>법률</b>로 정해야 한다. 관습법으로는 처벌할 수 없다(관습 형법 금지).' },
+  10: { item: '출소 증명서', em: '🧾', scene: 4, spot: [22, 62], page: '교과서 81쪽', clue: '보상', type: 'choice',
+    story: '한결은 결국 무죄를 선고받았다. 그런데 무죄가 확정될 때까지 구치소에 갇혀 있었다.',
+    q: '한결이 국가를 상대로 구금에 대한 보상을 청구할 수 있는 제도는?',
+    opts: ['형사 보상 제도', '범죄 피해자 구조 제도', '배상 명령 제도', '선고 유예'], ans: 0,
+    hint: '구금되었다가 무죄 판결을 받은 사람이 국가에 청구하는 제도예요.',
+    learn: '<b>형사 보상 제도</b>: 구금되었다가 무죄 판결 등을 받은 사람은 국가에 구금에 대한 보상을 청구할 수 있다. 명예 회복 제도로 무죄 재판서 게재도 청구할 수 있다.' },
 };
+// 최종 변론문 — 빈칸 5개 (단서 10개 중에서 고른다)
+const FINAL = ['한결은 계산할 ', '고의', '가 없었고, ', '영장', ' 없이 모은 증거와 강요된 ', '자백', '은 증거가 될 수 없다. 판결 전까지 ', '피고인', '은 ', '무죄', '로 추정된다.'];
 
-// ---------------------------------------------------------------- 상태 (이 기기에 저장)
-const KEY = 'escape-suspect-v1';
-const fresh = () => ({ team: '', avatar: 0, start: 0, room: -1, step: 0, keys: [], hints: 0, wrong: 0, usedHint: {}, seq: [], end: 0, lockUntil: 0, lockText: '', overtime: false });
-// 저장 공간이 막힌 브라우저(사생활 보호 모드 등)에서도 화면은 뜨게 — 저장만 건너뛴다
+// ---------------------------------------------------------------- 상태 (이 기기)
+const KEY = 'escape-v3';
+const fresh = () => ({ session: '', team: '', avatar: 0, local0: 0, solved: {}, step: {}, hints: 0, wrong: 0, usedHint: {}, lockUntil: 0, lockText: '', end: 0 });
 const store = { get(k = KEY) { try { return JSON.parse(localStorage.getItem(k) || '{}'); } catch { return {}; } },
-  set(v, k = KEY) { try { localStorage.setItem(k, v); } catch { /* 저장 못 해도 게임은 계속 */ } },
-  clear() { try { localStorage.removeItem(KEY); } catch { /* 무시 */ } } };
+  set(v, k = KEY) { try { localStorage.setItem(k, v); } catch { /* 저장 못 해도 계속 */ } } };
 let S = Object.assign(fresh(), store.get());
 const save = () => store.set(JSON.stringify(S));
+let CFG = { session: 'local', cls: '', teams: DEFAULT_TEAMS, limitMin: 25, start: 0 };
+let BOARD = null; // 서버의 모둠별 진행 (대시보드·우리 모둠 진행 합치기)
 const $ = (h) => { const d = document.createElement('div'); d.innerHTML = h.trim(); return d.firstElementChild; };
 const app = document.getElementById('app');
 const shuffle = (a) => a.map((v) => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map((x) => x[1]);
-function elapsed() { return Math.floor(((S.end || Date.now()) - S.start) / 1000); }
-function fmt(sec) { const m = Math.floor(Math.abs(sec) / 60), s = Math.abs(sec) % 60; return (sec < 0 ? '-' : '') + m + ':' + String(s).padStart(2, '0'); }
 function esc(t) { return String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function fmt(sec) { const m = Math.floor(Math.abs(sec) / 60), s = Math.abs(sec) % 60; return (sec < 0 ? '-' : '') + m + ':' + String(s).padStart(2, '0'); }
+const startAt = () => CFG.start || S.local0 || Date.now();
+const elapsedSec = () => Math.floor(((S.end || Date.now()) - startAt()) / 1000);
+const params = new URLSearchParams(location.search);
+
+// ---------------------------------------------------------------- 서버 (없으면 조용히 기기 안에서만)
+async function apiGet(a) {
+  if (!API) return null;
+  try { const r = await fetch(API + '?a=' + a, { cache: 'no-store' }); return await r.json(); } catch { return null; }
+}
+const PENDING = 'escape-v3-pending';
+function report(type, qr) { // 실패하면 모아 두었다가 다시 보낸다
+  if (!API || CFG.session === 'local') return;
+  const q = store.get(PENDING); const list = Array.isArray(q.list) ? q.list : [];
+  list.push({ a: 'event', session: CFG.session, team: S.team, type, qr });
+  store.set(JSON.stringify({ list }), PENDING); flush();
+}
+let flushing = false;
+async function flush() {
+  if (!API || flushing) return; flushing = true;
+  try {
+    let list = store.get(PENDING).list || [];
+    while (list.length) {
+      const ev = list[0];
+      try { const r = await fetch(API, { method: 'POST', body: JSON.stringify(ev) }); await r.json(); } catch { break; }
+      list = list.slice(1); store.set(JSON.stringify({ list }), PENDING);
+    }
+  } finally { flushing = false; }
+}
+async function loadConfig() {
+  const c = await apiGet('board');
+  if (c && c.ok && c.session) { CFG = { session: c.session, cls: c.cls, teams: c.teams, limitMin: c.limitMin, start: c.start }; BOARD = c; }
+  if (S.session !== CFG.session) { const av = S.avatar; S = fresh(); S.session = CFG.session; S.avatar = av; save(); } // 새 반이 시작됨 → 이 기기 기록 비우기
+}
+function teamSolved() { // 내 기기 + 같은 모둠 다른 기기(서버)
+  const all = Object.assign({}, S.solved);
+  const p = BOARD && BOARD.progress && BOARD.progress[S.team];
+  if (p) Object.keys(p.solved || {}).forEach((k) => { all[k] = all[k] || p.solved[k]; });
+  return all;
+}
 
 // ---------------------------------------------------------------- 소리 (브라우저가 직접 만드는 배경음·효과음)
 const Snd = {
@@ -225,7 +312,9 @@ const Snd = {
 };
 document.addEventListener('visibilitychange', () => { if (!Snd.ctx) return; if (document.hidden) Snd.ctx.suspend(); else Snd.ctx.resume(); });
 // 새로고침 뒤에는 첫 터치에서 소리를 다시 켠다 (브라우저 규칙상 터치 없이는 소리를 낼 수 없음)
-document.addEventListener('pointerdown', () => { if (S.room >= 0 && !S.end && Snd.on) Snd.start(); }, { once: true });
+document.addEventListener('pointerdown', () => { if (S.team && !S.end && Snd.on) Snd.start(); }, { once: true });
+
+
 
 // ---------------------------------------------------------------- 캐릭터 (모둠이 고르는 변호사)
 const AVATARS = [['#3E5C87', '#1E2D44'], ['#B8473D', '#5A221D'], ['#2E8B57', '#17452B'], ['#7B4FA0', '#3D2750']];
@@ -237,8 +326,10 @@ function heroSVG(k) {
     <rect x="41" y="58" width="14" height="11" rx="2" fill="#6B4A2B"/><rect x="45" y="55" width="6" height="4" rx="1" fill="none" stroke="#6B4A2B" stroke-width="1.6"/>
     <circle cx="30" cy="25" r="13" fill="#F2C7A5"/><path d="M17 23 Q19 9 30 10 Q42 9 43 23 Q38 15 30 16 Q22 15 17 23Z" fill="#2B2B33"/>
     <circle cx="25" cy="26" r="1.8" fill="#222"/><circle cx="35" cy="26" r="1.8" fill="#222"/><path d="M25 32 Q30 35 35 32" stroke="#9A5B43" stroke-width="1.6" fill="none"/>
-    <circle cx="44" cy="46" r="3" fill="${S.keys.length ? '#F3C9A8' : 'transparent'}"/></svg>`;
+    <circle cx="44" cy="46" r="3" fill="${Object.keys(S.solved || {}).length ? '#F3C9A8' : 'transparent'}"/></svg>`;
 }
+
+
 
 // ---------------------------------------------------------------- 방 장면 (자체 제작 그림)
 const DOOR = (label) => `<g id="door"><rect x="688" y="228" width="84" height="196" rx="4" fill="#5A3B26" stroke="#2A1A10" stroke-width="4"/>
@@ -296,31 +387,19 @@ const SCENES = [
     <g fill="#4C3A2B">${[0, 1, 2].map((k) => `<rect x="40" y="${300 + k * 40}" width="200" height="22" rx="4"/><rect x="560" y="${300 + k * 40}" width="110" height="22" rx="4"/>`).join('')}</g>
     <rect x="360" y="300" width="80" height="60" fill="#5B4836"/><text x="400" y="336" fill="#E9D7A8" font-size="13" font-weight="800" text-anchor="middle">피고인석</text>${DOOR('자유로')}`,
 ];
-// 방마다 터치할 물건 (x,y = 장면 안 % 위치)
-const SPOTS = [
-  { record: [50, 62, '📄', '체포 보고서'], clue: [26, 70, '📘', '교과서 단서'] },
-  { record: [50, 56, '📄', '조사 기록'], clue: [22, 52, '📘', '교과서 단서'] },
-  { record: [60, 48, '📋', '압수 목록'], clue: [19, 30, '📘', '교과서 단서'] },
-  { record: [50, 50, '📜', '영장 청구서'], clue: [16, 64, '📘', '교과서 단서'] },
-];
-const FINAL_SPOTS = [[22, 62, '📜', '절차 순서판'], [68, 76, '🎤', '기자'], [89, 58, '🔐', '법정 문 자물쇠'], [50, 48, '⚖️', '재판부']];
-const DOOR_SPOT = [89, 62];
-const HOME = [10, 84];
 
-// ---------------------------------------------------------------- 공통 동작
+
+// ---------------------------------------------------------------- 공통 화면 조각
 function hud() {
-  const left = LIMIT_MIN * 60 - elapsed();
-  const keys = ['적', '법', '절', '차'].map((k) => `<div class="key ${S.keys.includes(k) ? 'got' : ''}">${S.keys.includes(k) ? k : '?'}</div>`).join('');
-  return `<div class="hud"><div class="info">👥 <b>${esc(S.team)}</b> · ⏱ <b id="clock" class="clock ${left < 300 ? 'danger' : ''}">${fmt(left)}</b> · 💡 <span id="hl">${MAX_HINTS - S.hints}</span></div>
-    <div class="right">${keys}<button class="icon-btn" id="snd" aria-label="소리 켜기/끄기">${Snd.on ? '🔊' : '🔇'}</button></div></div>`;
+  const left = CFG.limitMin * 60 - elapsedSec(); const n = Object.keys(teamSolved()).length;
+  return `<div class="hud"><div class="info">👥 <b>${esc(S.team)}</b> · ⏱ <b id="clock" class="clock ${left < 300 ? 'danger' : ''}">${fmt(left)}</b> · 🗝️ <b>${n}</b>/10</div>
+    <div class="right"><button class="icon-btn" id="home" aria-label="수사 현황">🗂️</button><button class="icon-btn" id="snd" aria-label="소리">${Snd.on ? '🔊' : '🔇'}</button></div></div>`;
 }
-function wireHud() { const b = document.getElementById('snd'); if (b) b.onclick = () => { Snd.toggle(); b.textContent = Snd.on ? '🔊' : '🔇'; }; }
-
-// 잠금이 끝나는 시각을 저장한다 — 새로고침해도 남은 시간만큼 잠긴 채로
-function lock(text) {
-  S.wrong++; S.lockUntil = Date.now() + LOCK_SEC * 1000; S.lockText = text; save();
-  Snd.sfx('bad'); showLock();
+function wireHud() {
+  const b = document.getElementById('snd'); if (b) b.onclick = () => { Snd.toggle(); b.textContent = Snd.on ? '🔊' : '🔇'; };
+  const h = document.getElementById('home'); if (h) h.onclick = () => { history.replaceState(null, '', location.pathname); home(); };
 }
+function lock(text) { S.wrong++; S.lockUntil = Date.now() + LOCK_SEC * 1000; S.lockText = text; save(); Snd.sfx('bad'); report('wrong'); showLock(); }
 let lockTimer = null;
 function showLock() {
   const L = document.getElementById('lock'); clearInterval(lockTimer);
@@ -341,18 +420,7 @@ function sheet(html, closable = true) {
   return sh.querySelector('.card');
 }
 function closeSheet() { const s = document.getElementById('sheet'); if (s) s.remove(); }
-function flyKey(k) {
-  const el = $(`<div class="flykey">🗝️</div>`); document.body.append(el);
-  el.style.left = (innerWidth / 2 - 27) + 'px'; el.style.top = (innerHeight / 2 - 27) + 'px';
-  const slots = document.querySelectorAll('.key'); const idx = ['적', '법', '절', '차'].indexOf(k); const r = slots[idx] && slots[idx].getBoundingClientRect();
-  requestAnimationFrame(() => requestAnimationFrame(() => { if (r) { el.style.left = r.left + 'px'; el.style.top = r.top + 'px'; } el.style.transform = 'scale(.4)'; el.style.opacity = '.2'; }));
-  setTimeout(() => el.remove(), 1000);
-}
-
-// 캐릭터 이동
-let heroPos = HOME.slice();
-function placeHero(stage, x, y) { const h = stage.querySelector('.hero'); h.style.transitionDuration = '0ms'; h.style.left = x + '%'; h.style.top = y + '%'; heroPos = [x, y]; }
-let walking = false;
+let heroPos = [10, 84], walking = false;
 function walkTo(stage, x, y, cb) {
   if (walking) return; walking = true;
   const h = stage.querySelector('.hero'); const dx = x - heroPos[0], dy = y - heroPos[1];
@@ -360,249 +428,245 @@ function walkTo(stage, x, y, cb) {
   h.classList.toggle('flip', dx < 0); h.classList.add('walk');
   h.style.transitionDuration = ms + 'ms'; h.style.left = x + '%'; h.style.top = y + '%'; heroPos = [x, y];
   let n = 0; const st = setInterval(() => { if (n++ * 320 < ms) Snd.sfx('step'); else clearInterval(st); }, 320);
-  setTimeout(() => { h.classList.remove('walk'); walking = false; cb && cb(); }, ms + 30);
+  setTimeout(() => { h.classList.remove('walk'); walking = false; if (cb) cb(); }, ms + 30);
 }
-const feet = (x, y) => [Math.max(x - 8, 5), Math.min(y + 14, 90)]; // 물건을 가리지 않게 옆에 선다
-
-function talk(who, name, text) {
-  return `<div class="talk"><div class="who">${who}</div><div><div class="nm">${name}</div><div class="txt">${text}</div></div></div>`;
+const feet = (x, y) => [Math.max(x - 8, 5), Math.min(y + 14, 90)];
+const talk = (who, name, text) => `<div class="talk"><div class="who">${who}</div><div><div class="nm">${name}</div><div class="txt">${text}</div></div></div>`;
+function stageHTML(sceneIdx, title) {
+  return `<div class="stage"><svg class="scene" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">${SCENES[sceneIdx]()}</svg>
+    <div class="room-title">${title}</div><div class="hero" style="left:10%;top:84%">${heroSVG(S.avatar)}</div><div class="fade"></div></div>`;
 }
-
-// ---------------------------------------------------------------- 화면
-function render() {
-  closeSheet();
-  if (S.room === -1) return intro();
-  if (S.end) return finish();
-  if (!S.overtime && elapsed() >= LIMIT_MIN * 60) return timeUp();
-  return play();
+function addSpot(stage, key, [x, y], em, lb, cls, fn) {
+  const b = $(`<button class="hs ${cls || ''}" data-hs="${key}" style="left:${x}%;top:${y}%"><span class="em">${em}</span><span class="lb">${lb}</span></button>`);
+  b.onclick = () => { if (walking || document.getElementById('sheet')) return; walkTo(stage, ...feet(x, y), fn); };
+  stage.append(b); return b;
 }
 
-function intro() {
+// ---------------------------------------------------------------- 모둠 고르기 (기기마다 한 번)
+function ensureTeam(next) {
+  if (S.team && CFG.teams.includes(S.team)) return next();
   app.innerHTML = '';
-  let av = 0;
+  let av = S.avatar || 0;
   const c = $(`<div class="title-card">
-    <div class="sub">법과 사회 · 형사 절차와 인권 보장 방탈출</div>
+    <div class="sub">법과 사회 · 형사 절차와 인권 보장 방탈출 ${CFG.cls ? '· ' + esc(CFG.cls) : ''}</div>
     <h1>억울한 피의자를 구하라</h1>
-    <p>고등학생 <b style="color:#F3C9A8">한결</b>(가상 인물)이 편의점 절도범으로 몰렸다.<br>여러분은 한결의 <b style="color:#F3C9A8">국선 변호인 팀</b>. 방 5개를 돌며 <b>위법한 절차</b>를 찾아내라!</p>
-    <p style="font-size:16px">🔎 방 안의 물건을 터치하면 변호사가 걸어가 조사합니다 · 🗝️ 방마다 열쇠 글자 1개<br>⏱ ${LIMIT_MIN}분 · 💡 힌트 ${MAX_HINTS}번 · ❌ 틀리면 ${LOCK_SEC}초 잠김</p>
-    <div class="q" style="color:#fff">우리 모둠 변호사를 골라 주세요</div>
-    <div class="avatars">${AVATARS.map((_, k) => `<button class="av ${k === 0 ? 'on' : ''}" data-k="${k}">${heroSVG(k)}</button>`).join('')}</div>
-    <input class="team" id="team" maxlength="12" placeholder="모둠 이름 (예: 3모둠 정의의 변호인)">
-    <div><button class="btn warm" id="go">▶ 방탈출 시작 (소리 켜짐)</button></div>
-    <button class="btn ghost" id="reset">처음부터 다시 (선생님용)</button>
+    <p>고등학생 <b style="color:#F3C9A8">한결</b>(가상 인물)이 편의점 절도범으로 몰렸다. 여러분은 한결의 <b style="color:#F3C9A8">국선 변호인 팀</b>!<br>
+    교실 곳곳에 숨겨진 <b>증거물 QR 10개</b>를 찾아 위법한 절차를 밝혀내라. 순서는 자유!</p>
+    <div class="q" style="color:#fff">① 우리 모둠을 고르세요</div>
+    <div class="teams">${CFG.teams.map((t) => `<button class="tm" data-t="${esc(t)}">${esc(t)}</button>`).join('')}</div>
+    <div class="q" style="color:#fff">② 내 변호사 캐릭터</div>
+    <div class="avatars">${AVATARS.map((_, k) => `<button class="av ${k === av ? 'on' : ''}" data-k="${k}">${heroSVG(k)}</button>`).join('')}</div>
+    <p style="font-size:15px">🕵️ 현장 탐정: QR을 찍고 문제를 푼다 · 📒 수사 기록관: 나온 단서를 기록지에 적는다</p>
   </div>`);
   app.append(c);
   c.querySelectorAll('.av').forEach((b) => { b.onclick = () => { av = +b.dataset.k; c.querySelectorAll('.av').forEach((x) => x.classList.toggle('on', x === b)); }; });
-  c.querySelector('#go').onclick = () => {
-    const t = c.querySelector('#team').value.trim();
-    if (!t) { alert('모둠 이름을 적어 주세요.'); return; }
-    Snd.start();
-    S = fresh(); S.team = t; S.avatar = av; S.start = Date.now(); S.room = 0; Snd.tempo = 92; save(); render();
-  };
-  c.querySelector('#reset').onclick = resetAll;
+  c.querySelectorAll('.tm').forEach((b) => { b.onclick = () => {
+    if (!confirm(`"${b.dataset.t}" 맞나요? 한 번 고르면 이 기기는 이 모둠으로 기록돼요.`)) return;
+    Snd.start(); S.team = b.dataset.t; S.avatar = av; if (!S.local0) S.local0 = Date.now(); save(); next();
+  }; });
 }
-function resetAll() { if (confirm('이 태블릿의 진행 기록을 지우고 처음부터 시작할까요?')) { store.clear(); S = fresh(); Snd.stopMusic(); render(); } }
 
-let doorOpen = false; // 방금 푼 방: 문이 열린 채로 보여 주고, 문을 누르면 다음 방으로
-function play() {
-  const final = S.room >= ROOMS.length;
-  const ri = doorOpen ? S.room - 1 : Math.min(S.room, 4);
-  const R = ROOMS[ri];
+// ---------------------------------------------------------------- 수사 현황 (QR 없이 열었을 때)
+function home() {
+  closeSheet();
+  if (S.end) return finish();
+  app.innerHTML = hud(); wireHud();
+  const solved = teamSolved(); const n = Object.keys(solved).length;
+  const grid = $(`<div class="cases">${Object.keys(QS).map((k) => { const q = QS[k]; const ok = solved[k];
+    return `<div class="case ${ok ? 'ok' : ''}"><div class="no">${k}</div><div class="em">${ok ? q.em : '❔'}</div><div class="nm">${ok ? q.item : '???'}</div><div class="cl">${ok ? '단서: <b>' + q.clue + '</b>' : 'QR을 찾아라'}</div></div>`; }).join('')}</div>`);
+  app.append($(`<div>${talk('🧑‍💼', '수사 현황', n < 10 ? `교실에 숨겨진 <b>증거물 QR</b>을 찍어 조사하세요. 지금까지 <b>${n}개</b> 해결! 같은 모둠 친구가 푼 것도 함께 표시돼요.` : '증거물 10개를 모두 모았다! <b>최종 변론 법정</b>으로 가자!')}</div>`));
+  app.append(grid);
+  const fb = $(`<div class="center"><button class="btn warm" id="final" ${n < 10 ? 'disabled' : ''}>⚖️ 최종 변론 법정 ${n < 10 ? '(10개를 모두 모으면 열려요)' : '입장!'}</button></div>`);
+  app.append(fb);
+  fb.querySelector('#final').onclick = finalCourt;
+}
+
+// ---------------------------------------------------------------- 증거물 QR
+function station(no) {
+  const Q = QS[no]; closeSheet();
+  if (!Q) return home();
+  if (S.end) return finish();
+  if (teamSolved()[no]) { home(); toast(`✅ 증거물 ${no}은 이미 해결했어요 (단서: ${Q.clue})`, 2200); return; }
   app.innerHTML = hud();
-  const stage = $(`<div class="stage ${doorOpen ? 'open' : ''}"><svg class="scene" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">${SCENES[ri]()}</svg>
-    <div class="room-title">${ri < 4 ? R.tag + ' · ' + R.title : '방 5 · 법정'}</div><div class="hero">${heroSVG(S.avatar)}</div><div class="fade"></div></div>`);
-  app.append(stage); wireHud();
-  placeHero(stage, ...(doorOpen ? feet(...DOOR_SPOT).map((v, k) => (k ? v : v - 14)) : HOME));
-  const box = $('<div id="talkbox"></div>'); app.append(box);
-  const addSpot = (key, [x, y, em, lb], cls, fn) => {
-    const b = $(`<button class="hs ${cls || ''}" data-hs="${key}" style="left:${x}%;top:${y}%"><span class="em">${em}</span><span class="lb">${lb}</span></button>`);
-    b.onclick = () => { if (walking || document.getElementById('sheet')) return; walkTo(stage, ...feet(x, y), fn); };
-    stage.append(b); return b;
-  };
-  if (doorOpen) {
-    box.innerHTML = talk('🗝️', '열쇠 획득', `문이 열렸다! <b>${R.key}</b> 열쇠를 챙겨 <b>다음 방</b>으로 가자. 열린 문을 터치하세요.`);
-    addSpot('door', [DOOR_SPOT[0], DOOR_SPOT[1], '🚪', '다음 방으로'], '', () => {
-      walkTo(stage, 97, 84, () => { stage.querySelector('.fade').classList.add('on'); setTimeout(() => { doorOpen = false; render(); }, 650); });
-    });
+  const stage = $(stageHTML(Q.scene, `증거물 ${no} · ${Q.item}`)); app.append(stage); wireHud(); heroPos = [10, 84];
+  app.append($(`<div>${talk('🧑‍💼', `증거물 ${no} · ${Q.item}`, `${Q.story}<br><b>👉 ${Q.em} ${Q.item}</b>를 터치해 조사하세요.`)}</div>`));
+  addSpot(stage, 'item', Q.spot, Q.em, Q.item, '', () => puzzle(no));
+  addSpot(stage, 'clue', HINT_SPOT, '📘', '교과서 단서', S.usedHint[no] ? 'done' : '', () => hintSheet(no));
+}
+function hintSheet(no) {
+  const Q = QS[no];
+  if (!S.usedHint[no]) {
+    if (!confirm('힌트를 쓸까요? 쓴 힌트는 대시보드에 기록돼요.')) return;
+    S.hints++; S.usedHint[no] = true; save(); report('hint', no);
+    const c = document.querySelector('[data-hs="clue"]'); if (c) c.classList.add('done');
+  }
+  sheet(`<span class="tag">📘 교과서 단서</span><span class="page-ref">${Q.page}</span><div class="hint" style="margin-top:12px">${Q.hint}</div>`);
+}
+function puzzle(no) {
+  const Q = QS[no]; const step = S.step[no] || 0;
+  const card = sheet(`<span class="tag">증거물 ${no} · ${Q.item}</span><span class="page-ref">${Q.page}</span><div id="area"></div>`);
+  const area = card.querySelector('#area');
+  const choices = (box, opts, ans, onOk) => shuffle(opts.map((o, i) => i)).forEach((i, k) => {
+    const b = $(`<button class="opt">${String.fromCharCode(9312 + k)} ${opts[i]}</button>`);
+    b.onclick = () => { if (i === ans) onOk(); else { b.classList.add('bad'); lock('다시 생각해 보세요.'); setTimeout(() => b.classList.remove('bad'), 1200); } };
+    box.append(b);
+  });
+  if (Q.type === 'find' && step === 0) {
+    area.append($('<p class="q">① 기록에서 <u>위법한 절차</u>가 적힌 줄을 터치하세요.</p>'));
+    const rec = $(`<div class="record"><div class="head">📄 ${Q.item} — 한결 사건</div></div>`);
+    Q.record.forEach((line, i) => { const b = $(`<button class="opt">${line}</button>`);
+      b.onclick = () => { if (i === Q.bad) { S.step[no] = 1; save(); Snd.sfx('ok'); b.classList.add('done'); setTimeout(() => puzzle(no), 500); } else { b.classList.add('bad'); lock('그 줄은 적법한 절차예요.'); setTimeout(() => b.classList.remove('bad'), 1200); } };
+      rec.append(b); });
+    area.append(rec); return;
+  }
+  if (Q.type === 'find') area.append($(`<div class="record" style="margin-bottom:12px"><div class="head">✅ 찾아낸 위법</div><div class="opt done" style="cursor:default">${Q.record[Q.bad]}</div></div>`));
+  area.append($(`<p class="q">${Q.type === 'find' ? '② ' : ''}${Q.q}</p>`));
+  if (Q.type === 'find' || Q.type === 'choice') { const box = $('<div class="opts"></div>'); area.append(box); choices(box, Q.opts, Q.ans, () => solve(no)); return; }
+  if (Q.type === 'order') {
+    const seq = $('<div class="seq"></div>'), box = $('<div class="opts"></div>'); area.append(seq); area.append(box); let picked = [];
+    shuffle(Q.steps).forEach((s) => { const b = $(`<button class="opt">${s}</button>`);
+      b.onclick = () => { if (picked.includes(s)) return;
+        if (s !== Q.steps[picked.length]) { picked = []; seq.innerHTML = ''; box.querySelectorAll('.opt').forEach((x) => x.classList.remove('sel')); lock('순서가 틀렸어요. 처음부터!'); return; }
+        picked.push(s); b.classList.add('sel'); seq.append($(`<span class="chip">${picked.length}. ${s}</span>`)); Snd.sfx('step');
+        if (picked.length === Q.steps.length) setTimeout(() => solve(no), 500); };
+      box.append(b); });
     return;
   }
-  if (final) return finalRoom(stage, box, addSpot);
-  const P = SPOTS[ri];
-  const needFind = R.bad >= 0 && S.step === 0;
-  box.innerHTML = talk('🧑‍💼', `${R.tag} · ${R.title}`, `${R.story}<br><b>👉 ${P.record[3]}</b>를 터치해 조사하세요. 막히면 <b>📘 교과서 단서</b>(힌트)를 써도 돼요.`);
-  addSpot('record', P.record, '', () => puzzle(R, ri));
-  addSpot('clue', P.clue, S.usedHint['r' + ri] ? 'done' : '', () => hintSheet('r' + ri, R.hint, R.page));
-  addSpot('door', [DOOR_SPOT[0], DOOR_SPOT[1], '🔒', '잠긴 문'], 'dim', () => {
-    const h = stage.querySelector('.hero'); h.classList.add('shake'); setTimeout(() => h.classList.remove('shake'), 450);
-    toast('🔒 문이 잠겨 있어요. 먼저 ' + P.record[3] + '를 조사하세요!');
-  });
-  if (!needFind && R.bad >= 0) box.innerHTML = talk('🧑‍💼', `${R.tag} · ${R.title}`, `위법을 찾아냈다! 이제 <b>${P.record[3]}</b>를 다시 터치해 어떤 권리를 침해했는지 밝히자.`);
-}
-
-function hintSheet(id, text, page) {
-  if (!S.usedHint[id]) {
-    if (S.hints >= MAX_HINTS) { toast('💡 힌트를 모두 썼어요. 교과서 ' + page + '를 펼쳐 보세요!', 2200); return; }
-    if (!confirm(`힌트를 쓸까요? (남은 힌트 ${MAX_HINTS - S.hints}개)`)) return;
-    S.hints++; S.usedHint[id] = true; save();
-    const c = document.querySelector('[data-hs="clue"]'); if (c) c.classList.add('done');
-    const hl = document.getElementById('hl'); if (hl) hl.textContent = MAX_HINTS - S.hints;
-  }
-  sheet(`<span class="tag">📘 교과서 단서</span><span class="page-ref">${page}</span><div class="hint" style="margin-top:12px">${text}</div>`);
-}
-
-function puzzle(R, ri) {
-  const needFind = R.bad >= 0 && S.step === 0;
-  const card = sheet(`<span class="tag">${R.tag} · ${R.title}</span><span class="page-ref">${R.page}</span>
-    <p class="q">${needFind ? '① 수사 기록에서 <u>위법한 절차</u>가 적힌 줄을 터치하세요.' : (R.bad >= 0 ? '② ' : '') + R.q2}</p><div id="area"></div>`);
-  const area = card.querySelector('#area');
-  if (needFind || R.bad < 0) {
-    const rec = $(`<div class="record"><div class="head">📄 수사 기록 — 한결 사건</div></div>`);
-    R.record.forEach((line, i) => {
-      const b = $(`<button class="opt">${line}</button>`);
-      if (!needFind) { b.disabled = true; b.style.cursor = 'default'; }
-      b.onclick = () => {
-        if (i === R.bad) { S.step = 1; save(); Snd.sfx('ok'); b.classList.add('done'); setTimeout(() => { puzzle(R, ri); const t = document.getElementById('talkbox'); if (t) t.innerHTML = talk('🧑‍💼', R.tag, '위법을 찾아냈다! 이제 어떤 권리를 침해했는지 밝히자.'); }, 500); }
-        else { b.classList.add('bad'); lock('그 줄은 적법한 절차예요.'); setTimeout(() => b.classList.remove('bad'), 1200); }
-      };
-      rec.append(b);
-    });
-    area.append(rec);
-    if (!needFind) area.append($('<div style="height:12px"></div>'));
-  }
-  if (!needFind) {
-    if (R.bad >= 0) area.prepend($(`<div class="record" style="margin-bottom:12px"><div class="head">✅ 찾아낸 위법</div><div class="opt done" style="cursor:default">${R.record[R.bad]}</div></div>`));
-    const opts = $('<div class="opts"></div>');
-    // 보기 순서는 태블릿마다 섞는다 — 모둠끼리 "①번이 답"을 주고받지 못하게
-    shuffle(R.opts.map((o, i) => i)).forEach((i, k) => {
-      const b = $(`<button class="opt">${String.fromCharCode(9312 + k)} ${R.opts[i]}</button>`);
-      b.onclick = () => {
-        if (i === R.ans) { S.keys.push(R.key); S.room++; S.step = 0; save(); solved(R); }
-        else { b.classList.add('bad'); lock('다시 생각해 보세요.'); setTimeout(() => b.classList.remove('bad'), 1200); }
-      };
-      opts.append(b);
-    });
-    area.append(opts);
+  if (Q.type === 'ox') {
+    const pick = {}; const box = $('<div class="opts"></div>'); area.append(box);
+    Q.items.forEach(([t], i) => { const row = $(`<div class="oxrow"><div class="oxt">${i + 1}. ${t}</div><button class="ox" data-v="1">O</button><button class="ox" data-v="0">X</button></div>`);
+      row.querySelectorAll('.ox').forEach((b) => { b.onclick = () => { pick[i] = b.dataset.v === '1'; row.querySelectorAll('.ox').forEach((x) => x.classList.toggle('on', x === b)); }; });
+      box.append(row); });
+    const go = $('<div class="center"><button class="btn warm">확인</button></div>'); area.append(go);
+    go.querySelector('button').onclick = () => {
+      if (Object.keys(pick).length < Q.items.length) { toast('세 문장 모두 O/X를 골라 주세요'); return; }
+      if (Q.items.every(([, v], i) => pick[i] === v)) solve(no); else lock('틀린 문장이 있어요.');
+    };
   }
 }
+function solve(no) {
+  const Q = QS[no];
+  S.solved[no] = Date.now(); save(); report('solve', no); Snd.sfx('key');
+  const n = Object.keys(teamSolved()).length;
+  const card = sheet(`<div class="center"><div class="big">🗝️</div><h2>증거물 ${no} 해결!</h2>
+    <div class="cluebox"><div style="font-size:15px;color:#6B7280">수사 기록지 ${no}번 칸에 적으세요</div><div class="clueword">${Q.clue}</div></div></div>
+    <div class="learn">${Q.learn}</div>
+    <p class="center" style="font-size:16px;color:#6B7280">우리 모둠 ${n} / 10 해결 ${n >= 10 ? '— 최종 변론 법정이 열렸어요!' : '— 다음 증거물 QR을 찾아라!'}</p>
+    <div class="center"><button class="btn" id="ok">수사 현황 보기</button></div>`, false);
+  card.querySelector('#ok').onclick = () => { history.replaceState(null, '', location.pathname); home(); };
+}
 
-function solved(R) {
-  Snd.sfx('key');
-  const card = sheet(`<div class="center"><div class="big">🗝️</div><h2>${R.tag} 해결! 열쇠 글자 「${R.key}」 획득</h2></div>
-    <div class="learn">${R.learn}</div><div class="center"><button class="btn warm" id="nx">문을 연다 🚪</button></div>`, false);
-  card.querySelector('#nx').onclick = () => {
-    closeSheet(); doorOpen = true; render(); flyKey(R.key);
-    setTimeout(() => Snd.sfx('door'), 200);
+// ---------------------------------------------------------------- 최종 변론 법정
+function finalCourt() {
+  if (Object.keys(teamSolved()).length < 10) return home();
+  app.innerHTML = hud();
+  const stage = $(stageHTML(4, '최종 변론 법정')); app.append(stage); wireHud();
+  app.append($(`<div>${talk('🧑‍💼', '최종 변론', '재판부 앞에서 변론문을 완성하자! 빈칸을 누르고, 아래 단서 단어를 눌러 채우세요.')}</div>`));
+  const blanks = FINAL.map((p, i) => (i % 2 ? `<button class="blank" data-i="${i}">　　　</button>` : esc(p))).join('');
+  const card = $(`<div class="card" style="background:#fff;color:#14161F;border-radius:18px;padding:18px;margin-top:10px">
+    <p class="q" style="margin-top:0">📜 최종 변론문</p><p class="final">${blanks}</p>
+    <div class="bank">${shuffle(Object.values(QS).map((q) => q.clue)).map((w) => `<button class="word">${w}</button>`).join('')}</div>
+    <div class="center"><button class="btn warm" id="judge">⚖️ 변론 마치고 판결 받기</button></div></div>`);
+  app.append(card);
+  let sel = null; const fill = {};
+  card.querySelectorAll('.blank').forEach((b) => { b.onclick = () => { sel = b; card.querySelectorAll('.blank').forEach((x) => x.classList.toggle('on', x === b)); }; });
+  card.querySelectorAll('.word').forEach((w) => { w.onclick = () => {
+    if (!sel) { sel = card.querySelector('.blank:not(.filled)') || card.querySelector('.blank'); }
+    fill[sel.dataset.i] = w.textContent; sel.textContent = w.textContent; sel.classList.add('filled'); Snd.sfx('step');
+    sel = card.querySelector('.blank:not(.filled)'); card.querySelectorAll('.blank').forEach((x) => x.classList.toggle('on', x === sel));
+  }; });
+  card.querySelector('#judge').onclick = () => {
+    const idx = FINAL.map((p, i) => i).filter((i) => i % 2);
+    if (idx.some((i) => !fill[i])) { toast('빈칸 5개를 모두 채워 주세요'); return; }
+    if (idx.every((i) => fill[i] === FINAL[i])) { S.end = Date.now(); save(); report('final'); Snd.sfx('win'); Snd.stopMusic(); finish(); }
+    else lock('재판부: "변론에 맞지 않는 단어가 있습니다."');
   };
 }
-
-function finalRoom(stage, box, addSpot) {
-  const st = S.step;
-  const lines = ['드디어 한결의 재판 날! 법정 안에는 <b>자물쇠 3개</b>가 걸려 있다. <b>📜 절차 순서판</b>부터 풀자.',
-    '순서판이 열렸다! 법정 앞에서 <b>🎤 기자</b>가 소리치고 있다. 기자에게 가 보자.',
-    '이제 <b>🔐 법정 문 자물쇠</b>. 네 방에서 모은 열쇠 글자로 원칙의 이름을 완성하자!',
-    '법정 문이 열렸다! <b>⚖️ 재판부</b>에게 가서 마지막 질문에 답하자.'];
-  box.innerHTML = talk('🧑‍💼', '방 5 · 법정', lines[st]);
-  FINAL_SPOTS.forEach((sp, k) => addSpot('final' + k, sp, k < st ? 'done' : (k > st ? 'dim' : ''), () => {
-    if (k !== st) { toast(k < st ? '✅ 이미 풀었어요' : '🔒 앞의 자물쇠부터 풀어요'); return; }
-    finalPuzzle(st);
-  }));
-  addSpot('clue', [10, 46, '📘', '교과서 단서'], S.usedHint['final' + st] ? 'done' : '', () => hintSheet('final' + st,
-    ['수사 기관이 조사 → 경찰이 검찰로 넘김 → 검사가 법원에 재판 신청 → 재판 → 판결 순서예요. (교과서 78~79쪽 흐름도)', '유죄 판결이 확정될 때까지 피고인은 어떻게 대우받아야 할까요?', '네 방에서 얻은 글자를 순서대로! 형사 절차 전체를 지배하는 원칙의 이름이에요. (교과서 80쪽 첫 문단)', '구금되었다가 무죄 판결을 받은 사람이 국가에 청구하는 제도예요. (교과서 81쪽)'][st], '교과서 78~81쪽'));
-}
-
-function finalPuzzle(st) {
-  const next = () => { S.step++; save(); Snd.sfx('door'); closeSheet(); render(); };
-  if (st === 0) {
-    const card = sheet(`<span class="tag">자물쇠 ① 절차 순서판</span><span class="page-ref">교과서 78~79쪽</span><p class="q">형사 절차를 순서대로 터치하세요.</p><div class="seq"></div><div class="opts"></div>`);
-    const seq = card.querySelector('.seq'), box = card.querySelector('.opts'); let picked = [];
-    shuffle(FINAL.order).forEach((step) => {
-      const b = $(`<button class="opt">${step}</button>`);
-      b.onclick = () => {
-        if (picked.includes(step)) return;
-        if (step !== FINAL.order[picked.length]) { picked = []; seq.innerHTML = ''; box.querySelectorAll('.opt').forEach((x) => x.classList.remove('sel')); lock('순서가 틀렸어요. 처음부터!'); return; }
-        picked.push(step); b.classList.add('sel'); seq.append($(`<span class="chip">${picked.length}. ${step}</span>`)); Snd.sfx('step');
-        if (picked.length === FINAL.order.length) { Snd.sfx('ok'); setTimeout(next, 600); }
-      };
-      box.append(b);
-    });
-  } else if (st === 1) {
-    const card = sheet(`<span class="tag">자물쇠 ② 기자</span><span class="page-ref">교과서 80쪽</span><p class="q">${FINAL.q}</p><div class="opts"></div>`);
-    const box = card.querySelector('.opts');
-    shuffle(FINAL.opts.map((o, i) => i)).forEach((i, k) => {
-      const b = $(`<button class="opt">${String.fromCharCode(9312 + k)} ${FINAL.opts[i]}</button>`);
-      b.onclick = () => { if (i === FINAL.ans) next(); else lock('다시 생각해 보세요.'); };
-      box.append(b);
-    });
-  } else if (st === 2) {
-    const card = sheet(`<span class="tag">자물쇠 ③ 법정 문</span><span class="page-ref">교과서 80쪽</span><p class="q">열쇠 글자 네 개로 원칙의 이름을 완성하세요.</p>
-      <p>"누구든지 법률에 규정된 절차에 따르지 않고는 처벌할 수 없다." — 이 원칙은?</p>
-      <div class="center"><input class="word" id="w" maxlength="4" autocomplete="off"><br><button class="btn warm" id="ok">법정 문 열기</button></div>`);
-    card.querySelector('#ok').onclick = () => {
-      const v = card.querySelector('#w').value.replace(/\s/g, '');
-      if (v === FINAL.word) next(); else lock('그 단어가 아니에요.');
-    };
-  } else {
-    const card = sheet(`<span class="tag">마지막 질문 · 재판부</span><span class="page-ref">교과서 81쪽</span>
-      <div class="learn"><b>적법 절차의 원칙</b> 덕분에 한결은 공정한 재판을 받았습니다. 위법하게 얻은 자백과 증거는 모두 증거에서 빠졌어요.</div>
-      <p class="q">${FINAL.epilogue}</p><div class="opts"></div>`);
-    const box = card.querySelector('.opts');
-    shuffle(FINAL.epOpts.map((o, i) => i)).forEach((i, k) => {
-      const b = $(`<button class="opt">${String.fromCharCode(9312 + k)} ${FINAL.epOpts[i]}</button>`);
-      b.onclick = () => { if (i === FINAL.epAns) { S.end = Date.now(); save(); Snd.sfx('win'); Snd.stopMusic(); render(); } else lock('다시 생각해 보세요.'); };
-      box.append(b);
-    });
-  }
-}
-
-// 제한 시간이 끝나면 진행을 멈추고 결과를 보여 준다. 배움을 끝까지 하도록 '마저 풀기'는 남기되 기록엔 시간 초과로 남는다.
-function timeUp() {
-  app.innerHTML = '';
-  const c = $(`<div class="title-card">
-    <div class="big">⏰</div><h1>시간 종료!</h1>
-    <p>국선 변호인 팀 <b>${esc(S.team)}</b>의 ${LIMIT_MIN}분 기록입니다. 이 화면을 선생님께 보여 주세요.</p>
-    <div class="card" style="background:#fff;color:#14161F;border-radius:16px;padding:6px 14px"><table class="res">
-      <tr><td>🗝️ 모은 열쇠</td><td><b>${S.keys.length}</b> / 4 ${S.keys.length ? '(' + S.keys.join('') + ')' : ''}</td></tr>
-      <tr><td>🚪 도착한 방</td><td><b>방 ${Math.min(S.room + 1, 5)}</b></td></tr>
-      <tr><td>💡 쓴 힌트</td><td><b>${S.hints}</b>개</td></tr>
-      <tr><td>❌ 틀린 횟수</td><td><b>${S.wrong}</b>번</td></tr></table></div>
-    <button class="btn" id="more">남은 방 마저 풀기 (기록: 시간 초과)</button><br>
-    <button class="btn ghost" id="reset">처음부터 다시 (선생님용)</button></div>`);
-  app.append(c);
-  c.querySelector('#more').onclick = () => { S.overtime = true; save(); render(); };
-  c.querySelector('#reset').onclick = resetAll;
-}
-
 function finish() {
-  app.innerHTML = '';
-  const t = elapsed();
-  // 성공 여부는 실제 걸린 시간으로 판단한다 — 종료 화면이 뜨기 직전 1초 안에 누른 정답도 시간 초과로
-  const late = S.overtime || S.end - S.start > LIMIT_MIN * 60 * 1000; // 초를 버림하면 25:00.5가 '25:00'으로 통과해 버린다 → 밀리초로 비교
-  const c = $(`<div class="title-card">
-    <div style="width:120px;margin:0 auto">${heroSVG(S.avatar)}</div>
-    <h1>${late ? '시간 초과 탈출' : '탈출 성공!'}</h1>
-    <p>한결을 구했습니다. 국선 변호인 팀 <b>${esc(S.team)}</b> 수고했어요!</p>
+  closeSheet(); app.innerHTML = '';
+  const late = S.end - startAt() > CFG.limitMin * 60 * 1000; const t = elapsedSec();
+  const c = $(`<div class="title-card"><div style="width:120px;margin:0 auto">${heroSVG(S.avatar)}</div>
+    <h1>${late ? '시간 초과 탈출' : '무죄 판결! 탈출 성공!'}</h1>
+    <p>재판부: "위법하게 모은 증거와 강요된 자백은 증거가 될 수 없고, 고의도 없었다. 피고인 한결은 <b>무죄</b>."</p>
     <div class="card" style="background:#fff;color:#14161F;border-radius:16px;padding:6px 14px"><table class="res">
-      <tr><td>⏱ 탈출 시간</td><td><b>${fmt(t)}</b> ${late ? '(시간 초과)' : ''}</td></tr>
-      <tr><td>💡 쓴 힌트</td><td><b>${S.hints}</b>개</td></tr>
-      <tr><td>❌ 틀린 횟수</td><td><b>${S.wrong}</b>번</td></tr>
-      <tr><td>🕒 끝난 시각</td><td>${new Date(S.end).toLocaleTimeString('ko-KR')}</td></tr></table>
-    <div class="learn" style="text-align:left">오늘 찾은 권리: <b>미란다 원칙 · 진술 거부권과 자백의 증거 능력 · 영장주의와 위법 수집 증거 배제 · 구속 적부심 · 무죄 추정 · 형사 보상</b></div></div>
-    <p style="font-size:16px">이 화면을 선생님께 보여 주세요.</p>
-    <button class="btn ghost" id="reset">처음부터 다시 (선생님용)</button></div>`);
+      <tr><td>👥 모둠</td><td><b>${esc(S.team)}</b></td></tr>
+      <tr><td>⏱ 걸린 시간</td><td><b>${fmt(t)}</b> ${late ? '(시간 초과)' : ''}</td></tr>
+      <tr><td>💡 이 기기에서 쓴 힌트</td><td><b>${S.hints}</b>개</td></tr><tr><td>❌ 이 기기에서 틀린 횟수</td><td><b>${S.wrong}</b>번</td></tr></table></div>
+    <p style="font-size:16px">대시보드에서 우리 모둠 순위를 확인하세요. 무죄로 풀려난 한결은 <b>형사 보상</b>을 청구할 수 있어요!</p></div>`);
   app.append(c);
-  c.querySelector('#reset').onclick = resetAll;
 }
 
+// ---------------------------------------------------------------- 대시보드 (?board, 칠판 TV용)
+async function board() {
+  document.body.classList.add('wide');
+  const draw = (b) => {
+    if (!b) { app.innerHTML = `<div class="title-card"><h1>대시보드</h1><p>${API ? '서버에 연결하지 못했어요. 잠시 뒤 다시 시도합니다.' : '서버 주소(API)가 아직 없어요. 앱스크립트를 배포한 뒤 주소를 넣어 주세요.'}</p></div>`; return; }
+    const lim = b.limitMin * 60 * 1000; const start = b.start; const now = b.now || Date.now();
+    const left = start ? Math.round((start + lim - now) / 1000) : null;
+    const rows = b.teams.map((t) => { const p = b.progress[t] || { solved: {}, hints: 0, wrong: 0, final: 0 }; return { t, p, n: Object.keys(p.solved).length }; });
+    const ranked = rows.filter((r) => r.p.final).sort((x, y) => x.p.final - y.p.final).map((r) => r.t);
+    const medal = (t) => ['🥇', '🥈', '🥉'][ranked.indexOf(t)] || (ranked.includes(t) ? '🏁' : '');
+    app.innerHTML = `<div class="board"><div class="bhead"><div><span class="sub">억울한 피의자를 구하라 · 실시간 수사 현황</span><h1>${esc(b.cls || '우리 반')}</h1></div>
+      <div class="bclock ${left !== null && left < 300 ? 'danger' : ''}">${left === null ? '시작 전' : '⏱ ' + fmt(left)}</div></div>
+      <table class="bt"><tr><th>모둠</th>${Object.keys(QS).map((k) => `<th>${k}</th>`).join('')}<th>변론</th><th>💡</th><th>❌</th></tr>
+      ${rows.map(({ t, p, n }) => `<tr><td class="tn">${medal(t)} ${esc(t)} <small>${n}/10</small></td>${Object.keys(QS).map((k) => `<td class="${p.solved[k] ? 'ok' : ''}">${p.solved[k] ? '✔' : ''}</td>`).join('')}
+        <td class="${p.final ? 'fin' : ''}">${p.final ? fmt(Math.round((p.final - (start || p.final)) / 1000)) : ''}</td><td>${p.hints}</td><td>${p.wrong}</td></tr>`).join('')}</table>
+      <p class="bfoot">QR을 찍어 증거물을 조사하세요 · 5초마다 새로 고침</p></div>`;
+  };
+  const tick = async () => draw(await apiGet('board'));
+  await tick(); setInterval(tick, 5000);
+}
+
+// ---------------------------------------------------------------- 선생님 설정 (?teacher)
+async function teacher() {
+  const b = await apiGet('board');
+  app.innerHTML = '';
+  const c = $(`<div class="title-card" style="text-align:left"><div class="sub">선생님 설정</div><h1 style="font-size:32px">반 만들기 · 모둠 정하기</h1>
+    <p>${API ? (b ? `서버 연결됨 ✅ · 지금 반: <b>${esc(b.cls || '없음')}</b> (${(b.teams || []).length}모둠)` : '서버에 연결하지 못했어요 ❌') : '서버 주소가 없어 이 기능을 쓸 수 없어요.'}</p>
+    <label>비밀번호(처음 입력한 값이 선생님 비밀번호가 됩니다)<input class="team" id="pin" type="password"></label>
+    <label>반 이름<input class="team" id="cls" placeholder="예: 2학년 3반"></label>
+    <label>모둠 수 <input class="team" id="cnt" type="number" min="1" max="20" value="6" style="width:120px"></label>
+    <div id="names" class="names"></div>
+    <label>제한 시간(분)<input class="team" id="lim" type="number" min="5" max="120" value="25" style="width:120px"></label>
+    <div><button class="btn warm" id="mk">새 반 시작 (기록 초기화)</button> <button class="btn" id="go">⏱ 지금 타이머 시작</button></div>
+    <p id="msg" style="font-weight:800"></p>
+    <p style="font-size:15px">대시보드: <a style="color:#F3C9A8" href="?board">이 주소 뒤에 ?board</a> · 학생 기기는 새 반을 시작하면 QR을 찍을 때 모둠을 다시 고릅니다.</p></div>`);
+  app.append(c);
+  const names = c.querySelector('#names');
+  const drawNames = () => { const n = Math.max(1, Math.min(20, +c.querySelector('#cnt').value || 1)); const old = [...names.querySelectorAll('input')].map((x) => x.value);
+    names.innerHTML = Array.from({ length: n }, (_, i) => `<input class="team" value="${esc(old[i] || (i + 1) + '모둠')}">`).join(''); };
+  c.querySelector('#cnt').oninput = drawNames; drawNames();
+  const post = async (body) => { try { const r = await fetch(API, { method: 'POST', body: JSON.stringify(body) }); return await r.json(); } catch { return { ok: false, error: '연결 실패' }; } };
+  const msg = (t) => { c.querySelector('#msg').textContent = t; };
+  c.querySelector('#mk').onclick = async () => {
+    if (!confirm('새 반을 시작하면 지금 대시보드 기록이 모두 지워져요. 계속할까요?')) return;
+    const r = await post({ a: 'setup', pin: c.querySelector('#pin').value, cls: c.querySelector('#cls').value, limitMin: +c.querySelector('#lim').value,
+      teams: [...names.querySelectorAll('input')].map((x) => x.value) });
+    msg(r.ok ? '✅ 새 반을 만들었어요. 수업을 시작할 때 "지금 타이머 시작"을 누르세요.' : '❌ ' + r.error);
+  };
+  c.querySelector('#go').onclick = async () => { const r = await post({ a: 'start', pin: c.querySelector('#pin').value }); msg(r.ok ? '⏱ 타이머를 시작했어요!' : '❌ ' + r.error); };
+}
+
+// ---------------------------------------------------------------- 시작
 setInterval(() => {
-  const el = document.getElementById('clock');
-  if (!el || S.end) return;
-  const left = LIMIT_MIN * 60 - elapsed();
+  const el = document.getElementById('clock'); if (!el || S.end) return;
+  const left = CFG.limitMin * 60 - elapsedSec();
   el.textContent = fmt(left); el.classList.toggle('danger', left < 300);
-  Snd.tempo = left < 300 ? 118 : 92; // 5분 남으면 빨라지고, 새 게임이면 다시 보통 속도 (한 번 올리고 끝내면 다음 모둠까지 빠른 채로 남음 — 11-03 서지안 지적)
-  if (left <= 0 && !S.overtime) render(); // 시간이 다 되면 그 자리에서 멈춤
+  Snd.tempo = left < 300 ? 118 : 92;
 }, 1000);
-render();
-if (S.lockUntil > Date.now()) showLock();
+setInterval(async () => { // 같은 모둠 다른 기기가 푼 것도 반영
+  if (!API || params.has('board') || params.has('teacher') || !S.team) return;
+  const b = await apiGet('board'); if (b && b.ok && b.session === CFG.session) BOARD = b; flush();
+}, 15000);
+(async () => {
+  if (params.has('board')) return board();
+  if (params.has('teacher')) return teacher();
+  await loadConfig(); flush();
+  if (S.lockUntil > Date.now()) showLock();
+  const qr = Number(params.get('qr'));
+  ensureTeam(() => (qr ? station(qr) : home()));
+})();
+
 </script>
 </body>
 </html>
