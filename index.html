@@ -114,7 +114,7 @@
   .word { font-family:inherit; font-size:18px; font-weight:800; padding:10px 14px; border-radius:999px; border:2px solid #3E5C87; background:#EEF2F7; color:#14161F; cursor:pointer; }
   .btn:disabled { background:#5B6275; box-shadow:none; }
   label { display:block; margin:10px 0; font-weight:800; } label .team, label input { display:block; margin-top:6px; }
-  .names { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:8px; } .names .team { width:100%; }
+  .names { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:8px; } .trow { display:flex; gap:6px; align-items:center; } .trow .tnm { flex:1; width:auto; } .trow .tsz { width:70px; padding:12px 4px; }
   body.wide #app { max-width:1800px; }
   .board { padding:10px 18px; } .bhead { display:flex; justify-content:space-between; align-items:flex-end; }
   .board h1 { font-size:44px; margin:4px 0 12px; } .bclock { font-size:56px; font-weight:900; color:#F3C9A8; }
@@ -216,6 +216,9 @@ let BOARD = null; // 서버의 모둠별 진행 (대시보드·우리 모둠 진
 const $ = (h) => { const d = document.createElement('div'); d.innerHTML = h.trim(); return d.firstElementChild; };
 const app = document.getElementById('app');
 const shuffle = (a) => a.map((v) => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map((x) => x[1]);
+const tName = (t) => String(t || '').split('|')[0];
+const tSize = (t) => { const n = Number(String(t || '').split('|')[1]); return n > 0 ? n : 0; };
+const tLabel = (t) => tName(t) + (tSize(t) ? ` (${tSize(t)}명)` : '');
 function esc(t) { return String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 function fmt(sec) { const m = Math.floor(Math.abs(sec) / 60), s = Math.abs(sec) % 60; return (sec < 0 ? '-' : '') + m + ':' + String(s).padStart(2, '0'); }
 const startAt = () => CFG.start || S.local0 || Date.now();
@@ -397,7 +400,7 @@ const SCENES = [
 // ---------------------------------------------------------------- 공통 화면 조각
 function hud() {
   const left = CFG.limitMin * 60 - elapsedSec(); const n = Object.keys(teamSolved()).length;
-  return `<div class="hud"><div class="info">👥 <b>${esc(S.team)}</b> · ⏱ <b id="clock" class="clock ${left < 300 ? 'danger' : ''}">${fmt(left)}</b> · 🗝️ <b>${n}</b>/10</div>
+  return `<div class="hud"><div class="info">👥 <b>${esc(tName(S.team))}</b> · ⏱ <b id="clock" class="clock ${left < 300 ? 'danger' : ''}">${fmt(left)}</b> · 🗝️ <b>${n}</b>/10</div>
     <div class="right"><button class="icon-btn" id="home" aria-label="수사 현황">🗂️</button><button class="icon-btn" id="snd" aria-label="소리">${Snd.on ? '🔊' : '🔇'}</button></div></div>`;
 }
 function wireHud() {
@@ -458,7 +461,7 @@ function ensureTeam(next) {
     <p>고등학생 <b style="color:#F3C9A8">한결</b>(가상 인물)이 편의점 절도범으로 몰렸다. 여러분은 한결의 <b style="color:#F3C9A8">국선 변호인 팀</b>!<br>
     교실 곳곳에 숨겨진 <b>증거물 QR 10개</b>를 찾아 위법한 절차를 밝혀내라. 순서는 자유!</p>
     <div class="q" style="color:#fff">① 우리 모둠을 고르세요</div>
-    <div class="teams">${CFG.teams.map((t) => `<button class="tm" data-t="${esc(t)}">${esc(t)}</button>`).join('')}</div>
+    <div class="teams">${CFG.teams.map((t) => `<button class="tm" data-t="${esc(t)}">${esc(tName(t))}${tSize(t) ? `<small style="display:block;font-size:14px;color:#9AA3B5">${tSize(t)}명</small>` : ''}</button>`).join('')}</div>
     <div class="q" style="color:#fff">② 내 변호사 캐릭터</div>
     <div class="avatars">${AVATARS.map((_, k) => `<button class="av ${k === av ? 'on' : ''}" data-k="${k}">${heroSVG(k)}</button>`).join('')}</div>
     <p style="font-size:15px">🕵️ 현장 탐정: QR을 찍고 문제를 푼다 · 📒 수사 기록관: 나온 단서를 기록지에 적는다</p>
@@ -466,7 +469,7 @@ function ensureTeam(next) {
   app.append(c);
   c.querySelectorAll('.av').forEach((b) => { b.onclick = () => { av = +b.dataset.k; c.querySelectorAll('.av').forEach((x) => x.classList.toggle('on', x === b)); }; });
   c.querySelectorAll('.tm').forEach((b) => { b.onclick = () => {
-    if (!confirm(`"${b.dataset.t}" 맞나요? 한 번 고르면 이 기기는 이 모둠으로 기록돼요.`)) return;
+    if (!confirm(`"${tName(b.dataset.t)}" 맞나요? 한 번 고르면 이 기기는 이 모둠으로 기록돼요.`)) return;
     Snd.start(); S.team = b.dataset.t; S.avatar = av; if (!S.local0) S.local0 = Date.now(); save(); next();
   }; });
 }
@@ -599,7 +602,7 @@ function finish() {
     <h1>${late ? '시간 초과 탈출' : '무죄 판결! 탈출 성공!'}</h1>
     <p>재판부: "위법하게 모은 증거와 강요된 자백은 증거가 될 수 없고, 고의도 없었다. 피고인 한결은 <b>무죄</b>."</p>
     <div class="card" style="background:#fff;color:#14161F;border-radius:16px;padding:6px 14px"><table class="res">
-      <tr><td>👥 모둠</td><td><b>${esc(S.team)}</b></td></tr>
+      <tr><td>👥 모둠</td><td><b>${esc(tLabel(S.team))}</b></td></tr>
       <tr><td>⏱ 걸린 시간</td><td><b>${fmt(t)}</b> ${late ? '(시간 초과)' : ''}</td></tr>
       <tr><td>💡 이 기기에서 쓴 힌트</td><td><b>${S.hints}</b>개</td></tr><tr><td>❌ 이 기기에서 틀린 횟수</td><td><b>${S.wrong}</b>번</td></tr></table></div>
     <p style="font-size:16px">대시보드에서 우리 모둠 순위를 확인하세요. 무죄로 풀려난 한결은 <b>형사 보상</b>을 청구할 수 있어요!</p></div>`);
@@ -619,7 +622,7 @@ async function board() {
     app.innerHTML = `<div class="board"><div class="bhead"><div><span class="sub">억울한 피의자를 구하라 · 실시간 수사 현황</span><h1>${esc(b.cls || '우리 반')}</h1></div>
       <div class="bclock ${left !== null && left < 300 ? 'danger' : ''}">${left === null ? '시작 전' : '⏱ ' + fmt(left)}</div></div>
       <table class="bt"><tr><th>모둠</th>${Object.keys(QS).map((k) => `<th>${k}</th>`).join('')}<th>변론</th><th>💡</th><th>❌</th></tr>
-      ${rows.map(({ t, p, n }) => `<tr><td class="tn">${medal(t)} ${esc(t)} <small>${n}/10</small></td>${Object.keys(QS).map((k) => `<td class="${p.solved[k] ? 'ok' : ''}">${p.solved[k] ? '✔' : ''}</td>`).join('')}
+      ${rows.map(({ t, p, n }) => `<tr><td class="tn">${medal(t)} ${esc(tName(t))} <small>${tSize(t) ? '👤' + tSize(t) + ' · ' : ''}${n}/10</small></td>${Object.keys(QS).map((k) => `<td class="${p.solved[k] ? 'ok' : ''}">${p.solved[k] ? '✔' : ''}</td>`).join('')}
         <td class="${p.final ? 'fin' : ''}">${p.final ? fmt(Math.round((p.final - (start || p.final)) / 1000)) : ''}</td><td>${p.hints}</td><td>${p.wrong}</td></tr>`).join('')}</table>
       <p class="bfoot">QR을 찍어 증거물을 조사하세요 · 5초마다 새로 고침</p></div>`;
   };
@@ -632,10 +635,11 @@ async function teacher() {
   const b = await apiGet('board');
   app.innerHTML = '';
   const c = $(`<div class="title-card" style="text-align:left"><div class="sub">선생님 설정</div><h1 style="font-size:32px">반 만들기 · 모둠 정하기</h1>
-    <p>${API ? (b ? `서버 연결됨 ✅ · 지금 반: <b>${esc(b.cls || '없음')}</b> (${(b.teams || []).length}모둠)` : '서버에 연결하지 못했어요 ❌') : '서버 주소가 없어 이 기능을 쓸 수 없어요.'}</p>
+    <p>${API ? (b ? `서버 연결됨 ✅ · 지금 반: <b>${esc(b.cls || '없음')}</b> (${(b.teams || []).length}모둠: ${(b.teams || []).map((t) => esc(tLabel(t))).join(', ')})` : '서버에 연결하지 못했어요 ❌') : '서버 주소가 없어 이 기능을 쓸 수 없어요.'}</p>
     <label>비밀번호(처음 입력한 값이 선생님 비밀번호가 됩니다)<input class="team" id="pin" type="password"></label>
     <label>반 이름<input class="team" id="cls" placeholder="예: 2학년 3반"></label>
     <label>모둠 수 <input class="team" id="cnt" type="number" min="1" max="20" value="6" style="width:120px"></label>
+    <label>기본 모둠 인원(명) — 아래에서 모둠마다 따로 바꿀 수 있어요 <input class="team" id="size" type="number" min="1" max="12" value="4" style="width:120px"></label>
     <div id="names" class="names"></div>
     <label>제한 시간(분)<input class="team" id="lim" type="number" min="5" max="120" value="25" style="width:120px"></label>
     <div><button class="btn warm" id="mk">새 반 시작 (기록 초기화)</button> <button class="btn" id="go">⏱ 지금 타이머 시작</button></div>
@@ -643,15 +647,19 @@ async function teacher() {
     <p style="font-size:15px">대시보드: <a style="color:#F3C9A8" href="?board">이 주소 뒤에 ?board</a> · 학생 기기는 새 반을 시작하면 QR을 찍을 때 모둠을 다시 고릅니다.</p></div>`);
   app.append(c);
   const names = c.querySelector('#names');
-  const drawNames = () => { const n = Math.max(1, Math.min(20, +c.querySelector('#cnt').value || 1)); const old = [...names.querySelectorAll('input')].map((x) => x.value);
-    names.innerHTML = Array.from({ length: n }, (_, i) => `<input class="team" value="${esc(old[i] || (i + 1) + '모둠')}">`).join(''); };
-  c.querySelector('#cnt').oninput = drawNames; drawNames();
+  const drawNames = (resetSize) => {
+    const n = Math.max(1, Math.min(20, +c.querySelector('#cnt').value || 1)); const def = Math.max(1, +c.querySelector('#size').value || 4);
+    const old = [...names.querySelectorAll('.trow')].map((r) => [r.querySelector('.tnm').value, r.querySelector('.tsz').value]);
+    names.innerHTML = Array.from({ length: n }, (_, i) => `<div class="trow"><input class="team tnm" value="${esc((old[i] && old[i][0]) || (i + 1) + '모둠')}" maxlength="15">
+      <input class="team tsz" type="number" min="1" max="12" value="${resetSize || !old[i] ? def : old[i][1]}"><span>명</span></div>`).join('');
+  };
+  c.querySelector('#cnt').oninput = () => drawNames(false); c.querySelector('#size').oninput = () => drawNames(true); drawNames(true);
   const post = async (body) => { try { const r = await fetch(API, { method: 'POST', body: JSON.stringify(body) }); return await r.json(); } catch { return { ok: false, error: '연결 실패' }; } };
   const msg = (t) => { c.querySelector('#msg').textContent = t; };
   c.querySelector('#mk').onclick = async () => {
     if (!confirm('새 반을 시작하면 지금 대시보드 기록이 모두 지워져요. 계속할까요?')) return;
     const r = await post({ a: 'setup', pin: c.querySelector('#pin').value, cls: c.querySelector('#cls').value, limitMin: +c.querySelector('#lim').value,
-      teams: [...names.querySelectorAll('input')].map((x) => x.value) });
+      teams: [...names.querySelectorAll('.trow')].map((r) => r.querySelector('.tnm').value.replace(/\|/g, ' ').trim() + '|' + Math.max(1, +r.querySelector('.tsz').value || 1)) });
     msg(r.ok ? '✅ 새 반을 만들었어요. 수업을 시작할 때 "지금 타이머 시작"을 누르세요.' : '❌ ' + r.error);
   };
   c.querySelector('#go').onclick = async () => { const r = await post({ a: 'start', pin: c.querySelector('#pin').value }); msg(r.ok ? '⏱ 타이머를 시작했어요!' : '❌ ' + r.error); };
