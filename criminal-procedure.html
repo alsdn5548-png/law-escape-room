@@ -20,11 +20,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1b1e27;font-family:
 .chip.c0.on,.chip.c0.done{background:var(--inv)}.chip.c1.on,.chip.c1.done{background:var(--pro)}.chip.c2.on,.chip.c2.done{background:var(--tri)}.chip.c3.on,.chip.c3.done{background:var(--exe)}
 .arrowchip{color:#0003;font-size:22px;font-weight:900}
 #tools{margin-left:auto;display:flex;gap:8px}
-/* 폰처럼 화면이 많이 줄어들 때(배율<0.6) 누르는 곳만 키움 */
-#stage.sm #nav button{padding:20px 44px;font-size:40px;border-radius:24px}
-#stage.sm .tbtn{padding:10px 18px;font-size:30px}
-#stage.sm #tOn{width:44px!important;height:44px!important}
-#stage.sm label:has(#tOn){font-size:40px!important;padding:14px 26px;display:inline-flex;align-items:center;gap:12px}
+/* 폰처럼 화면이 많이 줄어들 때(배율<0.6) 누르는 곳을 실제 화면 기준 46px 이상으로 (--s로 거꾸로 계산) */
+#stage.sm #nav button{padding:0 44px;font-size:40px;border-radius:24px;min-height:calc(46px / var(--s))}
+#stage.sm .tbtn{position:relative;padding:10px 18px;font-size:30px;min-width:calc(46px / var(--s))}
+#stage.sm .tbtn::after{content:"";position:absolute;left:0;right:0;top:-10px;bottom:calc(60px - 46px / var(--s))}
+#stage.sm #tOn{width:calc(24px / var(--s))!important;height:calc(24px / var(--s))!important}
+#stage.sm label:has(#tOn){font-size:40px!important;padding:0 26px;min-height:calc(46px / var(--s));display:inline-flex;align-items:center;gap:12px}
 .tbtn{border:none;background:#fff;border-radius:12px;padding:8px 14px;font-size:20px;font-weight:700;cursor:pointer;box-shadow:0 2px 6px #0002;font-family:inherit;color:var(--ink)}
 .tbtn:hover{transform:translateY(-2px)}
 .tbtn.act{background:var(--ink);color:#fff}
