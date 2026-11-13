@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>형사 절차의 흐름 — 모션 그래픽 + 퀴즈</title>
+<style>
+:root{--ink:#1F2430;--bg:#FFF8EE;--inv:#E8913A;--inv2:#FFF1DE;--pro:#1F6FB2;--pro2:#E3F0FB;--tri:#5DA544;--tri2:#EAF6E3;--exe:#1E9FAB;--exe2:#E0F5F6;--red:#D6453D;--gold:#F2B705}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#1b1e27;font-family:"Pretendard","Malgun Gothic","맑은 고딕","Apple SD Gothic Neo",sans-serif;color:var(--ink);user-select:none}
+#wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#stage{position:relative;width:1600px;height:900px;background:var(--bg);overflow:hidden;transform-origin:center center;border-radius:6px}
+#stage.shake{animation:shake .45s}
+@keyframes shake{0%,100%{transform:translate(0,0) scale(var(--s))}20%{transform:translate(-14px,6px) scale(var(--s))}40%{transform:translate(12px,-8px) scale(var(--s))}60%{transform:translate(-8px,4px) scale(var(--s))}80%{transform:translate(6px,-2px) scale(var(--s))}}
+/* 상단 진행 표시 */
+#top{position:absolute;left:0;right:0;top:0;height:70px;display:flex;align-items:center;gap:10px;padding:0 30px;z-index:20}
+.chip{padding:8px 22px;border-radius:30px;font-weight:800;font-size:22px;background:#0000000d;color:#0005;transition:.4s}
+.chip.on{color:#fff;transform:scale(1.08);box-shadow:0 4px 12px #0003}
+.chip.done{color:#fff;opacity:.55}
+.chip.c0.on,.chip.c0.done{background:var(--inv)}.chip.c1.on,.chip.c1.done{background:var(--pro)}.chip.c2.on,.chip.c2.done{background:var(--tri)}.chip.c3.on,.chip.c3.done{background:var(--exe)}
+.arrowchip{color:#0003;font-size:22px;font-weight:900}
+#tools{margin-left:auto;display:flex;gap:8px}
+.tbtn{border:none;background:#fff;border-radius:12px;padding:8px 14px;font-size:20px;font-weight:700;cursor:pointer;box-shadow:0 2px 6px #0002;font-family:inherit;color:var(--ink)}
+.tbtn:hover{transform:translateY(-2px)}
+.tbtn.act{background:var(--ink);color:#fff}
+#bar{position:absolute;left:0;top:0;height:6px;background:linear-gradient(90deg,var(--inv),var(--pro),var(--tri),var(--exe));transition:width .6s;z-index:21}
+/* 아래 넘김 */
+#nav{position:absolute;bottom:18px;right:30px;display:flex;gap:10px;z-index:20}
+#nav button{border:none;border-radius:16px;padding:12px 26px;font-size:24px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 3px 8px #0003}
+#prev{background:#fff;color:var(--ink)}#next{background:var(--ink);color:#fff}
+#pg{position:absolute;bottom:30px;left:34px;font-size:20px;color:#0006;font-weight:700;z-index:20}
+/* 장면 공통 */
+.scene{position:absolute;inset:0;padding:90px 70px 90px}
+.stitle{display:flex;align-items:center;gap:18px;margin-bottom:26px}
+.stitle .no{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:30px;font-weight:900}
+.stitle h2{font-size:52px;font-weight:900;letter-spacing:-1px}
+.stitle small{font-size:24px;color:#0007;font-weight:700;margin-left:6px}
+.card{background:#fff;border-radius:26px;padding:26px 30px;box-shadow:0 6px 20px #0000001a}
+.big{font-size:34px;font-weight:800;line-height:1.45}
+.mid{font-size:28px;font-weight:600;line-height:1.5}
+.sm{font-size:23px;line-height:1.5;color:#000b}
+.hl{background:linear-gradient(transparent 55%,#FFE066 55%);padding:0 4px}
+.tag{display:inline-block;padding:6px 18px;border-radius:30px;color:#fff;font-weight:800;font-size:24px}
+.row{display:flex;gap:26px;align-items:stretch}
+.center{display:flex;align-items:center;justify-content:center}
+.emo{font-family:"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif}
+/* 등장 효과 */
+.a{opacity:0;animation-duration:.7s;animation-fill-mode:both;animation-delay:var(--d,0s);animation-timing-function:cubic-bezier(.2,.9,.25,1.25)}
+.up{animation-name:up}@keyframes up{from{opacity:0;transform:translateY(50px)}to{opacity:1;transform:none}}
+.pop{animation-name:pop}@keyframes pop{0%{opacity:0;transform:scale(.2)}70%{opacity:1;transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+.lft{animation-name:lft}@keyframes lft{from{opacity:0;transform:translateX(-120px)}to{opacity:1;transform:none}}
+.rgt{animation-name:rgt}@keyframes rgt{from{opacity:0;transform:translateX(120px)}to{opacity:1;transform:none}}
+.drop{animation-name:drop;animation-timing-function:cubic-bezier(.5,0,.75,0)}@keyframes drop{0%{opacity:0;transform:translateY(-500px)}80%{opacity:1;transform:translateY(10px)}100%{opacity:1;transform:none}}
+.fade{animation-name:fade;animation-timing-function:ease}@keyframes fade{from{opacity:0}to{opacity:1}}
+.stamp{animation-name:stamp;animation-duration:.4s;animation-timing-function:ease-in}@keyframes stamp{0%{opacity:0;transform:scale(3.2) rotate(-25deg)}100%{opacity:1;transform:scale(1) rotate(-10deg)}}
+.flip{animation-name:flip;animation-duration:.8s}@keyframes flip{0%{opacity:0;transform:perspective(900px) rotateY(90deg)}100%{opacity:1;transform:perspective(900px) rotateY(0)}}
+.bob{animation:bob 2.2s ease-in-out infinite}@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.wig{animation:wig 1s ease-in-out infinite}@keyframes wig{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+.blinkL{animation:blinkL .5s steps(1) infinite}@keyframes blinkL{50%{opacity:.25}}
+.drawp path,.drawp line{stroke-dasharray:1200;stroke-dashoffset:1200;animation:draw 1.1s ease forwards;animation-delay:var(--d,0s)}
+@keyframes draw{to{stroke-dashoffset:0}}
+/* 신분 배지 바꾸기 */
+.swap{position:relative;display:inline-block;height:64px;min-width:200px}
+.swap span{position:absolute;left:0;right:0;top:0;text-align:center;padding:10px 24px;border-radius:40px;color:#fff;font-weight:900;font-size:32px;white-space:nowrap}
+.swap .old{animation:out .45s ease forwards;animation-delay:var(--d)}
+.swap .new{opacity:0;animation:inb .6s cubic-bezier(.2,.9,.25,1.4) forwards;animation-delay:calc(var(--d) + .4s)}
+@keyframes out{to{opacity:0;transform:rotateX(90deg) scale(.6)}}
+@keyframes inb{0%{opacity:0;transform:scale(.2) rotate(-15deg)}100%{opacity:1;transform:none}}
+/* 사람 */
+.person .eyes{animation:blink 4s infinite;transform-origin:60px 58px}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+/* 표지 */
+#cover{background:radial-gradient(circle at 50% 40%,#2c3350,#141722)}
+.lightL,.lightR{position:absolute;top:-200px;width:900px;height:900px;border-radius:50%;filter:blur(60px);opacity:.0}
+.lightL{left:-300px;background:#ff2a2a;animation:pol 1s infinite}
+.lightR{right:-300px;background:#2a6bff;animation:pol 1s infinite .5s}
+@keyframes pol{0%,100%{opacity:0}25%{opacity:.55}50%{opacity:0}}
+.ctitle{font-size:118px;font-weight:900;color:#fff;letter-spacing:-3px;text-shadow:0 8px 30px #000a}
+.csub{font-size:32px;color:#ffffffcc;font-weight:600;margin-top:16px}
+.startbtn{margin-top:60px;border:none;border-radius:60px;padding:24px 70px;font-size:44px;font-weight:900;background:var(--gold);color:#222;cursor:pointer;font-family:inherit;box-shadow:0 10px 0 #b98a00,0 18px 30px #0008;animation:pulse 1.4s infinite}
+@keyframes pulse{50%{transform:scale(1.06)}}
+.tape{position:absolute;left:-100px;right:-100px;height:64px;background:repeating-linear-gradient(-45deg,#F2B705 0 50px,#222 50px 100px);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:30px;letter-spacing:6px}
+.tape b{background:#F2B705;padding:4px 24px;color:#222}
+/* 갈림길 */
+.box{background:#fff;border-radius:22px;padding:18px 24px;box-shadow:0 6px 18px #0000001f}
+.fly{position:absolute;font-size:70px;offset-rotate:0deg}
+/* 법정 */
+.bench{position:absolute;left:470px;top:140px;width:660px;height:200px;background:linear-gradient(#8B5A2B,#6b4220);border-radius:20px 20px 0 0;box-shadow:inset 0 -14px 0 #0003}
+.gavel{position:absolute;font-size:150px;transform-origin:80% 80%}
+.gavel.hit{animation:hit .9s ease-in-out 3;animation-delay:var(--d)}
+@keyframes hit{0%,100%{transform:rotate(0)}40%{transform:rotate(-40deg)}55%{transform:rotate(12deg)}70%{transform:rotate(0)}}
+/* 흐름 정리 */
+.flow{display:flex;gap:14px;align-items:stretch;height:500px}
+.fcol{border-radius:24px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.fcol h3{text-align:center;color:#fff;font-size:30px;padding:8px;border-radius:14px}
+.fn{background:#fff;border-radius:14px;padding:10px 14px;font-size:22px;font-weight:700;line-height:1.35;box-shadow:0 2px 6px #0001}
+.fn small{display:block;font-weight:500;font-size:18px;color:#0009}
+.idbar{display:flex;margin-top:20px;border-radius:40px;overflow:hidden;height:60px;font-size:28px;font-weight:900;color:#fff}
+.idbar div{display:flex;align-items:center;justify-content:center}
+/* 퀴즈 */
+#quiz{background:linear-gradient(135deg,#2b2f4a,#1a1d2e)}
+.qhead{display:flex;align-items:center;gap:20px;color:#fff}
+.qnum{font-size:30px;font-weight:900;background:var(--gold);color:#222;border-radius:16px;padding:8px 22px}
+.qscore{margin-left:auto;font-size:30px;font-weight:900}
+.combo{font-size:26px;font-weight:900;color:var(--gold);min-width:150px;text-align:right}
+.qcard{background:#fff;border-radius:30px;padding:36px 46px;margin-top:22px;font-size:44px;font-weight:800;line-height:1.45;min-height:200px;display:flex;align-items:center}
+.timer{height:16px;border-radius:10px;background:#ffffff26;margin-top:18px;overflow:hidden}
+.timer i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#5DD39E,#F2B705,#E5534B);transform-origin:left}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:24px}
+.ch{word-break:keep-all;border:none;border-radius:24px;padding:22px 26px;font-size:32px;font-weight:800;text-align:left;cursor:pointer;font-family:inherit;color:#fff;display:flex;align-items:center;gap:18px;box-shadow:0 7px 0 #0005;transition:transform .12s}
+.ch:hover{transform:translateY(-3px)}
+.ch .k{width:52px;height:52px;flex:none;border-radius:50%;background:#fff3;display:flex;align-items:center;justify-content:center;font-size:28px}
+.ch.right{outline:8px solid #5DD39E;animation:pop .5s}
+.ch.wrong{filter:grayscale(1) brightness(.6)}
+.ch.dim{opacity:.35}
+.ox{display:flex;gap:40px;justify-content:center;margin-top:26px}
+.ox .ch{width:340px;height:220px;justify-content:center;font-size:150px;padding:0}
+.expl{word-break:keep-all;margin-top:22px;border-radius:24px;padding:20px 30px;font-size:30px;font-weight:700;line-height:1.5;display:flex;gap:20px;align-items:center}
+.expl.ok{background:#E6F8EF;color:#13643D}.expl.no{background:#FDECEA;color:#9B231C}
+.result{text-align:center;color:#fff}
+#fx{position:absolute;inset:0;pointer-events:none;z-index:30}
+.bigmark{position:absolute;left:50%;top:50%;font-size:300px;font-weight:900;transform:translate(-50%,-50%);z-index:29;pointer-events:none;animation:mark .9s ease forwards}
+@keyframes mark{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}30%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}70%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.3)}}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <div id="bar"></div>
+  <div id="top"></div>
+  <div id="scene"></div>
+  <canvas id="fx" width="1600" height="900"></canvas>
+  <div id="pg"></div>
+  <div id="nav"><button id="prev">◀ 이전</button><button id="next">다음 ▶</button></div>
+</div></div>
+<script>
+/* ===================== 효과음 (WebAudio, 음원 파일 없음) ===================== */
+let AC=null, muted=false;
+function ac(){ if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended') AC.resume(); return AC; }
+function tone(f,t,d,type='sine',v=.18,f2=null){ if(muted) return; const c=ac(),o=c.createOscillator(),g=c.createGain(),s=c.currentTime+t;
+  o.type=type;o.frequency.setValueAtTime(f,s); if(f2) o.frequency.exponentialRampToValueAtTime(f2,s+d);
+  g.gain.setValueAtTime(0.0001,s);g.gain.exponentialRampToValueAtTime(v,s+.015);g.gain.exponentialRampToValueAtTime(0.0001,s+d);
+  o.connect(g).connect(c.destination);o.start(s);o.stop(s+d+.05); return o; }
+function noise(t,d,v=.25,ff=1200,ft='lowpass',ff2=null){ if(muted) return; const c=ac(),n=c.sampleRate*d,b=c.createBuffer(1,n,c.sampleRate),a=b.getChannelData(0);
+  for(let i=0;i<n;i++) a[i]=Math.random()*2-1; const src=c.createBufferSource();src.buffer=b; const fl=c.createBiquadFilter();fl.type=ft;
+  const s=c.currentTime+t; fl.frequency.setValueAtTime(ff,s); if(ff2) fl.frequency.exponentialRampToValueAtTime(ff2,s+d);
+  const g=c.createGain();g.gain.setValueAtTime(v,s);g.gain.exponentialRampToValueAtTime(0.0001,s+d);
+  src.connect(fl).connect(g).connect(c.destination);src.start(s); }
+const SFX={
+  siren(){ for(let i=0;i<4;i++){ tone(700,i*.5,.25,'sawtooth',.06,1100); tone(1100,i*.5+.25,.25,'sawtooth',.06,700);} },
+  whoosh(){ noise(0,.45,.35,300,'bandpass',4000); },
+  pop(){ tone(500,0,.12,'sine',.25,1300); },
+  stamp(){ tone(120,0,.25,'sine',.5,40); noise(0,.18,.45,900); },
+  gavel(){ for(let i=0;i<3;i++){ const t=.36+i*.9; tone(180,t,.22,'triangle',.5,60); noise(t,.12,.5,2500); } },
+  boing(){ if(muted) return; const c=ac(),o=c.createOscillator(),g=c.createGain(),l=c.createOscillator(),lg=c.createGain(),s=c.currentTime;
+    o.type='sine';o.frequency.setValueAtTime(150,s);o.frequency.exponentialRampToValueAtTime(620,s+.18);o.frequency.exponentialRampToValueAtTime(330,s+.6);
+    l.frequency.value=18;lg.gain.value=40;l.connect(lg).connect(o.frequency);
+    g.gain.setValueAtTime(.3,s);g.gain.exponentialRampToValueAtTime(.0001,s+.7);o.connect(g).connect(c.destination);o.start(s);l.start(s);o.stop(s+.75);l.stop(s+.75); },
+  ding(){ [784,988,1319].forEach((f,i)=>tone(f,i*.11,.35,'triangle',.22)); },
+  sad(){ [392,370,349,330].forEach((f,i)=>{ const d=i==3?.9:.32; const o=tone(f,i*.34,d,'sawtooth',.09); }); },
+  buzz(){ tone(140,0,.5,'square',.12); tone(147,0,.5,'square',.08); },
+  drum(){ for(let i=0;i<22;i++) noise(i*.07,.06,.12+i*.012,1800,'bandpass'); tone(90,1.6,.4,'sine',.5,50); noise(1.6,.5,.4,6000,'highpass'); },
+  fanfare(){ [[523,0],[659,.13],[784,.26],[1047,.42]].forEach(([f,t])=>{tone(f,t,.3,'square',.08);tone(f/2,t,.3,'triangle',.12)}); tone(1047,.6,.8,'square',.09); tone(784,.6,.8,'triangle',.1); },
+  coin(){ tone(988,0,.08,'square',.12); tone(1319,.08,.35,'square',.12); },
+  tick(){ tone(1500,0,.04,'square',.06); },
+  sparkle(){ [1568,2093,2637,3136].forEach((f,i)=>tone(f,i*.06,.25,'sine',.1)); },
+  step(){ tone(220,0,.08,'triangle',.25,110); },
+  door(){ tone(260,0,.5,'sawtooth',.05,180); noise(0,.5,.12,500); },
+  cheer(){ noise(0,1.4,.25,1500,'bandpass'); SFX.fanfare(); },
+  type(){ for(let i=0;i<10;i++) tone(1800+Math.random()*600,i*.07,.03,'square',.04); },
+  combo(n){ for(let i=0;i<Math.min(n,6);i++) tone(660*Math.pow(1.122,i),i*.07,.15,'triangle',.18); }
+};
+function sfx(n,arg){ try{ SFX[n] && SFX[n](arg); }catch(e){} }
+
+/* ===================== 그림 도우미 ===================== */
+function person(o={}){
+  const body=o.body||'#8892A6', w=o.w||150, skin='#FFDDBB';
+  const hair=o.hair===false?'':`<path d="M27 52 Q30 20 60 20 Q92 20 93 52 Q84 34 60 34 Q38 34 27 52Z" fill="${o.hairc||'#3a2a1e'}"/>`;
+  const extra=o.extra||'';
+  const mouth=o.sad?'M48 80 Q60 70 72 80':'M47 74 Q60 86 73 74';
+  return `<svg class="person" viewBox="0 0 120 170" width="${w}" height="${w*170/120}">
+   <ellipse cx="60" cy="164" rx="40" ry="6" fill="#0002"/>
+   <path d="M16 165 Q16 98 60 98 Q104 98 104 165Z" fill="${body}"/>${o.collar||''}
+   <circle cx="60" cy="58" r="34" fill="${skin}"/>${hair}
+   <g class="eyes"><circle cx="47" cy="58" r="4.5" fill="#222"/><circle cx="73" cy="58" r="4.5" fill="#222"/></g>
+   <circle cx="38" cy="70" r="5" fill="#ff9a9a66"/><circle cx="82" cy="70" r="5" fill="#ff9a9a66"/>
+   <path d="${mouth}" stroke="#222" stroke-width="3.5" fill="none" stroke-linecap="round"/>${o.sweat?'<path d="M95 40 q6 10 0 14 q-6 -4 0 -14Z" fill="#7cc6ff"/>':''}${extra}</svg>`;
+}
+const POLICE=person({body:'#2D4E8A',hair:false,extra:'<path d="M24 40 Q60 6 96 40 L96 46 L24 46Z" fill="#1d3461"/><rect x="20" y="42" width="80" height="8" rx="4" fill="#111"/><circle cx="60" cy="30" r="6" fill="#F2B705"/>'});
+const SUSPECT=(s)=>person({body:'#8892A6',sweat:true,sad:true,w:s||150});
+const PROSEC=person({body:'#22355e',collar:'<path d="M48 100 L60 124 L72 100Z" fill="#fff"/><path d="M57 104 L60 130 L63 104Z" fill="#c33"/>',hairc:'#222'});
+const JUDGE=person({body:'#1b1b1f',collar:'<path d="M44 100 L60 118 L76 100Z" fill="#fff"/><rect x="56" y="104" width="8" height="40" fill="#7d1f2e"/>',hairc:'#555'});
+const LAWYER=person({body:'#5a3d7a',collar:'<path d="M48 100 L60 124 L72 100Z" fill="#fff"/>',hairc:'#4b2e1e'});
+const WITNESS=person({body:'#C1784E',hairc:'#7a4b2a'});
+const E=(s,size)=>`<span class="emo" style="font-size:${size||60}px">${s}</span>`;
+const A=(cls,d,html,style='')=>`<div class="a ${cls}" style="--d:${d}s;${style}">${html}</div>`;
+const swap=(o,oc,n,nc,d)=>`<span class="swap" style="--d:${d}s"><span class="old" style="background:${oc}">${o}</span><span class="new" style="background:${nc}">${n}</span></span>`;
+const title=(no,col,t,s)=>`<div class="stitle a lft" style="--d:0s"><div class="no" style="background:${col}">${no}</div><h2>${t}</h2><small>${s||''}</small></div>`;
+
+/* ===================== 장면 ===================== */
+const STAGES=['수사','기소','공판','형 집행'];
+const SC=[
+/* 0 표지 */
+{stage:-1,id:'cover',dur:0,html:()=>`
+ <div class="lightL"></div><div class="lightR"></div>
+ <div class="tape" style="top:120px;transform:rotate(-4deg)"><b>POLICE LINE · 출입 금지 · POLICE LINE</b></div>
+ <div class="center" style="flex-direction:column;height:100%;position:relative;z-index:2;padding-top:40px">
+   ${A('pop',.2,E('🚨',120),'')}
+   ${A('up',.4,'<div class="ctitle">형사 절차의 흐름</div>')}
+   ${A('up',.6,'<div class="csub">사건 발생부터 형 집행까지 · 피의자 → 피고인 → 수형자</div>')}
+   ${A('up',.8,'<div class="csub" style="font-size:24px;opacity:.7">법과 사회 Ⅱ. 국가 생활과 법 · 03. 형법과 형사 절차</div>')}
+   ${A('pop',1.1,'<button class="startbtn" onclick="go(1)">🚓 출동!</button>')}
+ </div>
+ <div class="tape" style="bottom:90px;transform:rotate(3deg)"><b>KEEP OUT · 수사 중 · KEEP OUT</b></div>`},
+/* 1 수사 개시 */
+{stage:0,dur:9,sfx:[[0,'siren'],[2300,'pop'],[4200,'stamp']],html:()=>`
+ ${title(1,'var(--inv)','수사 개시','범죄가 의심되면 수사가 시작돼요')}
+ <div class="row" style="align-items:center;gap:60px;margin-top:20px">
+   <div style="text-align:center;width:330px">${A('lft',.3,`<div class="bob">${POLICE.replace('width="150"','width="220"')}</div>`)}
+     ${A('up',.8,'<div class="tag" style="background:#2D4E8A;margin-top:10px">수사기관 (경찰·검사)</div>')}</div>
+   ${A('pop',1.2,`<div class="card big" style="width:430px;position:relative">"범죄가 의심된다!<br>범인과 증거를 찾자!" ${E('🔍',54)}<div style="position:absolute;left:-28px;top:60px;border:16px solid transparent;border-right-color:#fff"></div></div>`)}
+   <div style="text-align:center;width:330px">${A('rgt',2.1,`<div class="wig">${SUSPECT(220)}</div>`)}
+     ${A('pop',2.3,'<div class="tag" style="background:var(--inv);font-size:34px;margin-top:10px">피의자</div>')}</div>
+ </div>
+ ${A('up',3.2,`<div class="card mid" style="margin-top:26px;background:var(--inv2)">🧾 <b>피의자</b> = 범죄 혐의를 받고 <span class="hl">수사를 받는 사람</span></div>`)}
+ ${A('stamp',4.2,`<div style="border:6px solid var(--red);color:var(--red);font-size:34px;font-weight:900;padding:10px 22px;border-radius:14px;background:#fff">아직 범인 아님!<br><span style="font-size:24px">무죄 추정의 원칙</span></div>`,'position:absolute;right:90px;bottom:110px')}`},
+/* 2 강제 수사와 영장주의 */
+{stage:0,dur:10,sfx:[[400,'whoosh'],[1500,'pop'],[1800,'pop'],[2100,'pop'],[2400,'pop'],[3900,'stamp']],html:()=>`
+ ${title(2,'var(--inv)','체포 · 구속 · 압수 · 수색','몸과 물건을 강제로 잡아 두려면?')}
+ ${A('up',.3,`<div class="card big" style="text-align:center;background:var(--inv2)">원칙은 <span class="hl" style="font-size:44px">불구속 수사</span> — 피의자를 가두지 않고 수사하는 것이 원칙!</div>`)}
+ <div class="row" style="margin-top:30px;justify-content:center;gap:30px">
+  ${[['🚔','체포','붙잡아 데려감'],['⛓️','구속','일정 기간 가둠'],['📦','압수','물건을 거둬 감'],['🔦','수색','집·몸 등을 뒤짐']].map((x,i)=>A('pop',1.4+i*.3,`<div class="card" style="width:250px;text-align:center"><div class="emo" style="font-size:80px">${x[0]}</div><div style="font-size:38px;font-weight:900">${x[1]}</div><div class="sm">${x[2]}</div></div>`)).join('')}
+ </div>
+ ${A('up',2.9,`<div class="card mid" style="margin-top:30px;width:1000px">이럴 땐 반드시 <b>판사가 발부한 영장</b>이 있어야 해요 → <span class="hl"><b>영장주의</b></span></div>`)}
+ ${A('stamp',3.9,`<div style="width:230px;height:230px;border:10px double var(--red);border-radius:50%;color:var(--red);display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fff;font-weight:900"><span style="font-size:70px">영장</span><span style="font-size:24px">판사 발부</span></div>`,'position:absolute;right:110px;bottom:105px')}`},
+/* 3 구속 전 / 구속 후 */
+{stage:0,dur:11,sfx:[[300,'whoosh'],[1300,'step'],[1500,'step'],[1700,'step'],[2600,'pop'],[5200,'pop'],[7400,'sparkle']],html:()=>`
+ ${title(3,'var(--inv)','구속될 때 피의자를 지키는 장치','구속 "전"과 구속 "후" 구별하기')}
+ <div style="position:relative;height:120px;margin-top:10px">
+   <svg class="drawp" width="1460" height="120" style="position:absolute;left:0;top:0"><line x1="40" y1="60" x2="1420" y2="60" stroke="#E8913A" stroke-width="10" stroke-linecap="round" style="--d:.3s"/></svg>
+   ${A('drop',1.2,`<div style="width:180px;text-align:center"><div style="background:var(--ink);color:#fff;border-radius:16px;padding:8px;font-size:34px;font-weight:900">⛓️ 구속</div></div>`,'position:absolute;left:640px;top:0')}
+   ${A('fade',1,`<div style="font-size:26px;font-weight:800;color:var(--inv)">◀ 구속 전</div>`,'position:absolute;left:60px;top:76px')}
+   ${A('fade',1,`<div style="font-size:26px;font-weight:800;color:var(--inv)">구속 후 ▶</div>`,'position:absolute;right:60px;top:76px')}
+ </div>
+ <div class="row" style="margin-top:20px">
+  ${A('lft',2.4,`<div class="card" style="flex:1;border-top:12px solid var(--inv)"><div style="display:flex;gap:20px;align-items:center"><div>${JUDGE.replace('width="150"','width="110"')}</div><div><div class="tag" style="background:var(--inv)">구속 전</div><div style="font-size:40px;font-weight:900;margin-top:8px">피의자 심문 제도</div></div></div>
+    <div class="mid" style="margin-top:12px">검사가 구속 영장을 청구하면 <b>판사가 피의자를 직접 만나</b> 이야기를 듣고 구속할지 정해요.</div></div>`)}
+  ${A('rgt',5,`<div class="card" style="flex:1;border-top:12px solid var(--pro)"><div style="display:flex;gap:20px;align-items:center"><div>${SUSPECT(110)}</div><div><div class="tag" style="background:var(--pro)">구속 후</div><div style="font-size:40px;font-weight:900;margin-top:8px">구속 적부심 제도</div></div></div>
+    <div class="mid" style="margin-top:12px">구속된 피의자가 <b>"구속이 맞는지 다시 봐 주세요!"</b> 하고 법원에 심사를 신청해요.</div></div>`)}
+ </div>
+ ${A('pop',7.2,`<div class="card mid" style="margin-top:22px;text-align:center;background:#FFF6CF">💡 외우는 법 — 구속 <b>전</b>: <b>판사가 묻는다</b> / 구속 <b>후</b>: <b>피의자가 신청한다</b></div>`)}`},
+/* 4 송치 / 불송치 */
+{stage:0,dur:10,sfx:[[300,'type'],[1500,'whoosh'],[3200,'whoosh'],[3600,'coin'],[5600,'stamp'],[6400,'pop']],html:()=>`
+ ${title(4,'var(--inv)','경찰 수사가 끝나면?','갈림길 ①')}
+ ${A('lft',.3,`<div class="box" style="width:330px;text-align:center"><div>${POLICE.replace('width="150"','width="110"')}</div><div style="font-size:32px;font-weight:900">경찰 수사 끝!</div></div>`,'position:absolute;left:70px;top:370px')}
+ <svg class="drawp" width="1600" height="900" style="position:absolute;left:0;top:0;pointer-events:none">
+   <path d="M400 500 C 560 500, 540 300, 700 300" stroke="#E8913A" stroke-width="10" fill="none" stroke-linecap="round" style="--d:1.2s"/>
+   <path d="M400 520 C 560 520, 540 690, 700 690" stroke="#9AA0AA" stroke-width="10" fill="none" stroke-linecap="round" style="--d:3s"/>
+   <path d="M1080 690 L 1200 690" stroke="#9AA0AA" stroke-width="10" fill="none" stroke-linecap="round" style="--d:4.6s"/>
+ </svg>
+ ${A('pop',1.9,`<div class="box" style="width:640px;border:5px solid var(--inv)"><span class="tag" style="background:var(--inv)">혐의 있음</span><div style="font-size:42px;font-weight:900;margin-top:10px">→ 검찰에 <span class="hl">송치</span> ${E('📁',46)}</div><div class="sm">사건 기록을 검사에게 넘겨요</div></div>`,'position:absolute;left:700px;top:220px')}
+ ${A('pop',3.6,`<div class="box" style="width:380px;border:5px solid #9AA0AA"><span class="tag" style="background:#8a909a">혐의 없음</span><div style="font-size:40px;font-weight:900;margin-top:10px">→ 검찰에 <span class="hl">불송치</span></div></div>`,'position:absolute;left:700px;top:610px')}
+ ${A('stamp',5.4,`<div style="border:7px solid var(--red);color:var(--red);font-size:46px;font-weight:900;padding:12px 26px;border-radius:14px;background:#fff">사건 종결</div>`,'position:absolute;left:1230px;top:640px')}
+ ${A('up',6.4,`<div class="card sm" style="width:640px;padding:14px 22px;background:#FFF6CF">⚠️ 끝난 듯하지만 <b>기록은 검사에게 보내요.</b> 검사가 보고 <b>재수사를 요구</b>할 수 있고, 고소인이 <b>이의 신청</b>하면 검찰로 송치돼요. (형사소송법 제245조의5·7·8)</div>`,'position:absolute;left:70px;top:215px')}`},
+/* 5 검사의 선택 */
+{stage:1,dur:12,sfx:[[300,'whoosh'],[1500,'door'],[3600,'door'],[3900,'fanfare'],[6400,'boing']],html:()=>`
+ ${title(5,'var(--pro)','검사의 선택: 재판에 넘길까?','갈림길 ②')}
+ <div class="row" style="align-items:flex-start">
+  <div style="width:290px;text-align:center">${A('lft',.3,PROSEC.replace('width="150"','width="200"'))}${A('up',.6,'<div class="tag" style="background:var(--pro)">검사</div>')}${A('pop',.9,`<div class="emo bob" style="font-size:80px;margin-top:10px">📁</div>`)}</div>
+  <div style="flex:1;display:flex;flex-direction:column;gap:20px">
+   ${A('rgt',1.4,`<div class="card" style="border-left:14px solid #8a909a"><div style="font-size:40px;font-weight:900">🚪 불기소 <span class="sm">— 재판에 넘기지 않음</span></div>
+     <div class="row" style="margin-top:12px;gap:14px">
+       <div class="card sm" style="flex:1;background:#F4F5F7;padding:14px 18px"><b style="font-size:26px;color:#222">혐의 없음</b><br>범죄를 증명할 증거가 없음</div>
+       <div class="card sm" style="flex:1;background:#F4F5F7;padding:14px 18px"><b style="font-size:26px;color:#222">공소권 없음</b><br>공소 시효가 지난 경우 등</div>
+       <div class="card sm" style="flex:1;background:#FFF6CF;padding:14px 18px"><b style="font-size:26px;color:#222">기소 유예</b><br>죄는 있지만 사정을 봐서 기소하지 않음</div>
+     </div></div>`)}
+   ${A('rgt',3.5,`<div class="card" style="border-left:14px solid var(--pro);background:var(--pro2)"><div style="font-size:46px;font-weight:900;color:var(--pro)">🚪 기소 = 공소 제기 ${E('⚖️',46)}</div><div class="mid">검사가 법원에 <span class="hl"><b>재판을 청구</b></span>하는 것</div></div>`)}
+   ${A('up',5.6,`<div class="card center" style="gap:24px;justify-content:flex-start"><span class="big">기소되면 신분이 바뀐다!</span>${swap('피의자','var(--inv)','피고인','var(--pro)',6)}</div>`)}
+  </div>
+ </div>`},
+/* 6 공판 - 모두 절차 */
+{stage:2,dur:10,sfx:[[200,'door'],[1000,'gavel'],[3800,'pop'],[5600,'pop']],html:()=>`
+ ${title(6,'var(--tri)','공판 ① 모두 절차','재판의 첫 단계')}
+ <div class="row" style="align-items:center">
+  <div style="width:520px;position:relative;height:560px">
+    ${A('drop',.5,`<div>${JUDGE.replace('width="150"','width="200"')}</div>`,'position:absolute;left:150px;top:30px')}
+    <div class="a fade emo" style="--d:.2s;position:absolute;left:30px;top:250px;width:460px;height:150px;background:linear-gradient(#8B5A2B,#6b4220);border-radius:20px;box-shadow:inset 0 -14px 0 #0003;display:flex;align-items:center;justify-content:center;color:#fff3;font-size:70px">⚖</div>
+    ${A('fade',.8,`<div class="gavel hit emo" style="--d:.9s;left:330px;top:150px;font-size:110px">🔨</div>`)}
+    ${A('up',.6,`<div style="text-align:center">${SUSPECT(110)}<div class="tag" style="background:var(--pro)">피고인</div></div>`,'position:absolute;left:190px;top:400px')}
+  </div>
+  <div style="flex:1;display:flex;flex-direction:column;gap:26px">
+   ${A('rgt',3.6,`<div class="card" style="border-left:14px solid var(--tri)"><div style="font-size:40px;font-weight:900">🤐 진술 거부권 고지</div><div class="mid">"말하고 싶지 않은 것은 <b>말하지 않아도 됩니다</b>." 하고 미리 알려 줘요.</div></div>`)}
+   ${A('rgt',5.4,`<div class="card" style="border-left:14px solid var(--tri)"><div style="font-size:40px;font-weight:900">🪪 인정 신문</div><div class="mid">이름·생년월일·주소 등을 물어 <b>법정에 나온 사람이 피고인 본인이 맞는지</b> 확인해요.</div></div>`)}
+  </div>
+ </div>`},
+/* 7 공판 - 심리 절차 */
+{stage:2,dur:11,sfx:[[400,'whoosh'],[1400,'pop'],[3000,'type'],[4600,'pop'],[6400,'sparkle']],html:()=>`
+ ${title(7,'var(--tri)','공판 ② 심리 절차','증거로 사실을 밝혀요')}
+ <div class="row" style="gap:22px">
+  ${A('up',1.2,`<div class="card" style="flex:1;text-align:center;border-top:12px solid var(--tri)"><div class="emo" style="font-size:90px">🧪</div><div style="font-size:38px;font-weight:900">증거 조사</div><div class="mid">CCTV·지문·서류 등<br>증거를 살펴봐요</div></div>`)}
+  ${A('up',2.8,`<div class="card" style="flex:1.4;text-align:center;border-top:12px solid var(--tri)"><div class="row center" style="gap:4px">${PROSEC.replace('width="150"','width="90"')}${LAWYER.replace('width="150"','width="90"')}${WITNESS.replace('width="150"','width="90"')}</div><div style="font-size:38px;font-weight:900">피고인·증인 신문 및 변론</div><div class="mid">검사와 변호인이 질문하고<br>서로 주장을 펼쳐요</div></div>`)}
+  ${A('up',4.4,`<div class="card" style="flex:1;text-align:center;border-top:12px solid var(--tri)"><div class="emo" style="font-size:90px">🎤</div><div style="font-size:38px;font-weight:900">피고인의 최후 진술</div><div class="mid">마지막으로 피고인이<br>하고 싶은 말을 해요</div></div>`)}
+ </div>
+ ${A('pop',6.2,`<div class="card mid" style="margin-top:26px;background:var(--tri2);text-align:center">순서 기억! <b>증거 조사</b> → <b>신문·변론</b> → <b>최후 진술</b> → 이제 판결만 남았다!</div>`)}`},
+/* 8 판결 선고 */
+{stage:2,dur:13,sfx:[[100,'gavel'],[3300,'pop'],[5300,'pop'],[7300,'stamp']],shake:[460,1360,2260],html:()=>`
+ ${title(8,'var(--tri)','공판 ③ 판결 선고','쾅! 쾅! 쾅!')}
+ <div class="row" style="align-items:flex-start">
+  <div style="width:360px;text-align:center;position:relative;height:420px">
+   ${A('fade',0,`<div class="gavel hit emo" style="--d:0s;position:absolute;left:70px;top:20px;font-size:200px">🔨</div>`)}
+   ${A('pop',2.7,`<div style="width:320px;font-size:48px;font-weight:900;color:var(--tri)">판결 선고!</div>`,'position:absolute;left:20px;top:300px')}
+  </div>
+  <div style="flex:1;display:flex;flex-direction:column;gap:20px">
+   ${A('rgt',3.2,`<div class="card" style="border-left:14px solid var(--tri)"><div style="font-size:36px;font-weight:900">📅 선고 후 7일 이내 항소·상고 가능</div><div class="mid">1심 → (항소) → 2심 → (상고) → 3심 대법원</div></div>`)}
+   ${A('rgt',5.2,`<div class="card" style="border-left:14px solid var(--tri)"><div style="font-size:36px;font-weight:900">🛡️ 불이익 변경 금지의 원칙</div><div class="mid">피고인만 상소했다면 <b>원래보다 더 무거운 형</b>을 선고할 수 없어요.</div></div>`)}
+   ${A('rgt',7.2,`<div class="card" style="border-left:14px solid var(--tri)"><div style="font-size:36px;font-weight:900">🔒 일사부재리의 원칙</div><div class="mid">판결이 확정된 사건은 <b>다시 처벌하지 않아요</b>.</div></div>`)}
+  </div>
+ </div>`},
+/* 9 확정 판결 */
+{stage:3,dur:9,sfx:[[300,'drum'],[2300,'sparkle']],html:()=>`
+ ${title(9,'var(--exe)','확정 판결','더 이상 다툴 수 없게 된 판결')}
+ ${A('pop',.2,`<div style="text-align:center;font-size:60px;font-weight:900;margin:20px 0" class="wig">두구두구두구… ${E('🥁',70)}</div>`)}
+ <div class="row" style="gap:40px">
+  ${A('flip',2,`<div class="card" style="flex:1;text-align:center;background:#FDECEA;border:6px solid var(--red)"><div style="font-size:110px;font-weight:900;color:var(--red)">유죄</div><div class="mid">→ 형을 정해 집행해요</div></div>`)}
+  ${A('flip',2.3,`<div class="card" style="flex:1;text-align:center;background:#E6F8EF;border:6px solid #2BA36B"><div style="font-size:110px;font-weight:900;color:#2BA36B">무죄</div><div class="mid">→ 억울함을 풀어 줘요</div></div>`)}
+ </div>`},
+/* 10 유죄 */
+{stage:3,dur:12,sfx:[[400,'whoosh'],[1300,'stamp'],[3300,'pop'],[5300,'pop'],[7400,'boing']],html:()=>`
+ ${title(10,'var(--exe)','유죄라면? 형 집행','세 가지 길')}
+ <div class="row" style="gap:22px">
+  ${A('up',1.2,`<div class="card" style="flex:1;border-top:12px solid var(--red)"><div class="emo" style="font-size:80px">🏢</div><div style="font-size:40px;font-weight:900">실형 선고</div><div class="mid">교도소 등에서 <b>실제로 형을 집행</b>받아요.</div></div>`)}
+  ${A('up',3.2,`<div class="card" style="flex:1;border-top:12px solid var(--gold)"><div class="emo" style="font-size:80px">⏸️</div><div style="font-size:40px;font-weight:900">집행 유예</div><div class="mid">형은 선고하지만 <b>집행을 미뤄</b> 줘요. 그 기간을 무사히 보내면 형 선고의 효력이 없어져요.</div></div>`)}
+  ${A('up',5.2,`<div class="card" style="flex:1;border-top:12px solid #2BA36B"><div class="emo" style="font-size:80px">🕊️</div><div style="font-size:40px;font-weight:900">선고 유예</div><div class="mid">가벼운 범죄라면 <b>선고 자체를 미뤄</b> 줘요. 2년이 지나면 면소된 것으로 봐요.</div></div>`)}
+ </div>
+ ${A('up',7,`<div class="card center" style="margin-top:22px;gap:24px;justify-content:flex-start"><span class="big">실형을 선고받아 형을 사는 사람은</span>${swap('피고인','var(--pro)','수형자','var(--exe)',7.4)}</div>`)}`},
+/* 11 무죄 */
+{stage:3,dur:10,sfx:[[300,'sparkle'],[1500,'coin'],[1750,'coin'],[2000,'coin'],[4000,'fanfare']],html:()=>`
+ ${title(11,'var(--exe)','무죄라면? 국가가 책임져요','억울함 풀기')}
+ <div class="row" style="align-items:center;gap:40px">
+  <div style="width:320px;text-align:center">${A('pop',.3,`<div class="bob">${person({body:'#8892A6',w:220})}</div>`)}${A('pop',.6,'<div class="tag" style="background:#2BA36B;font-size:34px">무죄 확정!</div>')}</div>
+  <div style="flex:1;display:flex;flex-direction:column;gap:26px">
+   ${A('rgt',1.3,`<div class="card" style="border-left:14px solid var(--exe)"><div style="font-size:42px;font-weight:900">💰 형사 보상 제도</div><div class="mid">구금되었다가 무죄 판결을 받으면 <b>국가에 정당한 보상</b>을 청구할 수 있어요. (헌법 제28조)</div></div>`)}
+   ${A('rgt',3.8,`<div class="card" style="border-left:14px solid var(--exe)"><div style="font-size:42px;font-weight:900">📢 명예 회복 제도</div><div class="mid">무죄 판결 내용을 <b>법무부 누리집에 올려 달라고</b> 청구해 명예를 되찾을 수 있어요.</div></div>`)}
+  </div>
+ </div>`},
+/* 12 한눈에 정리 */
+{stage:4,dur:0,sfx:[[200,'whoosh'],[900,'pop'],[1700,'pop'],[2500,'pop'],[3300,'pop'],[4300,'sparkle']],html:()=>`
+ ${title('✔','var(--ink)','한눈에 정리','형사 절차 전체 흐름')}
+ <div class="flow">
+  ${A('up',.8,`<div class="fcol" style="width:360px;background:var(--inv2);height:100%"><h3 style="background:var(--inv)">수사</h3>
+    <div class="fn">수사 개시 <small>불구속 수사가 원칙</small></div>
+    <div class="fn">체포·구속·압수·수색 <small>영장주의 · 구속 전 피의자 심문 · 구속 적부심</small></div>
+    <div class="fn">혐의 있음 → 검찰 송치<br>혐의 없음 → 불송치·사건 종결<small>검사 기록 검토 → 재수사 요구 가능</small></div>
+    <div class="fn">불기소 <small>혐의 없음 · 공소권 없음 · 기소 유예</small></div></div>`,'height:100%')}
+  ${A('pop',1.6,`<div class="fcol center" style="width:200px;background:var(--pro2);height:100%"><div style="width:170px;height:170px;border-radius:50%;background:var(--pro);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:40px;font-weight:900">기소<span style="font-size:20px">공소 제기</span></div></div>`,'height:100%')}
+  ${A('up',2.4,`<div class="fcol" style="width:340px;background:var(--tri2);height:100%"><h3 style="background:var(--tri)">공판</h3>
+    <div class="fn">① 모두 절차 <small>진술 거부권 고지 · 인정 신문</small></div>
+    <div class="fn">② 심리 절차 <small>증거 조사 · 신문 및 변론 · 최후 진술</small></div>
+    <div class="fn">③ 판결 선고 <small>7일 이내 항소·상고 · 불이익 변경 금지 · 일사부재리</small></div></div>`,'height:100%')}
+  ${A('up',3.2,`<div class="fcol" style="flex:1;background:var(--exe2);height:100%"><h3 style="background:var(--exe)">확정 판결 → 형 집행</h3>
+    <div class="fn" style="border-left:8px solid var(--red)">유죄 <small>실형 선고(수형자) · 집행 유예 · 선고 유예</small></div>
+    <div class="fn" style="border-left:8px solid #2BA36B">무죄 <small>형사 보상 제도 · 명예 회복 제도</small></div>
+    <button class="startbtn" style="margin-top:auto;font-size:34px;padding:16px 20px;animation-delay:0s" onclick="startQuiz()">🎯 퀴즈 도전!</button></div>`,'flex:1;height:100%')}
+ </div>
+ ${A('up',4.2,`<div class="idbar"><div style="flex:560;background:var(--inv)">피의자</div><div style="flex:340;background:var(--pro)">피고인</div><div style="flex:540;background:var(--exe)">수형자 (실형일 때)</div></div>`)}`}
+];
+
+/* ===================== 진행 ===================== */
+const stage=document.getElementById('stage'), sceneEl=document.getElementById('scene');
+let cur=0, timers=[], auto=false, autoT=null, inQuiz=false;
+function fit(){ const s=Math.min(innerWidth/1600,innerHeight/900); stage.style.setProperty('--s',s); stage.style.transform=`scale(${s})`; }
+addEventListener('resize',fit); fit();
+function drawTop(){
+  const st=inQuiz?5:SC[cur].stage;
+  let h=''; STAGES.forEach((n,i)=>{ h+=`<span class="chip c${i} ${i===st?'on':(st>i?'done':'')}">${n}</span>`+(i<3?'<span class="arrowchip">›</span>':''); });
+  h+=`<div id="tools"><button class="tbtn ${auto?'act':''}" id="autoB" title="자동 재생 (A)">${auto?'⏸ 자동':'▶ 자동'}</button><button class="tbtn" id="muteB" title="소리 (M)">${muted?'🔇':'🔊'}</button><button class="tbtn" id="fsB" title="전체 화면 (F)">⛶</button><button class="tbtn" id="quizB">🎯 퀴즈</button></div>`;
+  document.getElementById('top').innerHTML=h;
+  document.getElementById('autoB').onclick=()=>{auto=!auto;drawTop();schedAuto();};
+  document.getElementById('muteB').onclick=()=>{muted=!muted;drawTop();};
+  document.getElementById('fsB').onclick=fs;
+  document.getElementById('quizB').onclick=startQuiz;
+  document.getElementById('top').style.display=(cur===0&&!inQuiz)?'none':'flex';
+  document.getElementById('bar').style.width=inQuiz?'100%':(cur/(SC.length-1)*100)+'%';
+}
+function fs(){ if(!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{}); else document.exitFullscreen(); }
+function clearT(){ timers.forEach(clearTimeout); timers=[]; clearTimeout(autoT); clearInterval(qInt); }
+function go(i){
+  ac(); clearT(); inQuiz=false; cur=Math.max(0,Math.min(SC.length-1,i)); const s=SC[cur];
+  sceneEl.innerHTML=`<section class="scene" ${s.id?`id="${s.id}"`:''} style="${s.id?'padding:0':''}">${s.html()}</section>`;
+  (s.sfx||[]).forEach(([t,n])=>timers.push(setTimeout(()=>sfx(n),t)));
+  (s.shake||[]).forEach(t=>timers.push(setTimeout(shake,t)));
+  if(cur===SC.length-1) timers.push(setTimeout(()=>confetti(80),4400));
+  document.getElementById('pg').textContent=cur?`${cur} / ${SC.length-1}`:'';
+  document.getElementById('nav').style.display=cur===0?'none':'flex';
+  document.getElementById('next').textContent=cur===SC.length-1?'퀴즈 ▶':'다음 ▶';
+  drawTop(); schedAuto();
+}
+function schedAuto(){ clearTimeout(autoT); if(auto&&!inQuiz&&SC[cur].dur) autoT=setTimeout(()=>go(cur+1),SC[cur].dur*1000); }
+function shake(){ stage.classList.remove('shake'); void stage.offsetWidth; stage.classList.add('shake'); }
+document.getElementById('next').onclick=()=>{ if(inQuiz) return; cur===SC.length-1?startQuiz():go(cur+1); };
+document.getElementById('prev').onclick=()=>{ if(inQuiz) go(SC.length-1); else go(cur-1); };
+
+/* ===================== 퀴즈 ===================== */
+const QUIZ=[
+ {ox:1,q:'수사는 피의자를 <span class="hl">구속한 상태</span>에서 하는 것이 원칙이다.',a:false,ex:'불구속 수사가 원칙! 구속은 꼭 필요할 때만 해요.'},
+ {q:'체포·구속·압수·수색을 하려면 원칙적으로 <span class="hl">판사가 발부한 이것</span>이 있어야 한다. 무엇일까?',c:['영장','공소장','판결문','고소장'],a:0,ex:'영장주의 — 판사가 발부한 영장이 있어야 해요.'},
+ {q:'구속된 피의자가 "구속이 부당해요! 다시 심사해 주세요!"라고 법원에 신청하는 제도는?',c:['구속 적부심 제도','피의자 심문 제도','형사 보상 제도','인정 신문'],a:0,ex:'구속 "후" 피의자가 신청 → 구속 적부심 / 구속 "전" 판사가 직접 물음 → 피의자 심문'},
+ {q:'경찰이 수사해 보니 <span class="hl">혐의가 없다</span>고 판단했다. 경찰은 어떻게 할까?',c:['검찰에 불송치','검찰에 송치','법원에 기소','선고 유예'],a:0,ex:'혐의 없음 → 불송치. 다만 기록은 검사에게 보내 검사가 재수사를 요구할 수 있고, 고소인이 이의 신청하면 송치돼요. 혐의 있음 → 검찰에 송치.'},
+ {q:'죄는 인정되지만 초범이고 깊이 반성해서 검사가 <span class="hl">재판에 넘기지 않기로</span> 했다. 이 처분은?',c:['기소 유예','집행 유예','선고 유예','공소권 없음'],a:0,ex:'기소 유예는 검사가! 집행 유예·선고 유예는 판사가! 헷갈리는 짝 주의!'},
+ {q:'검사가 공소를 제기(기소)하면 피의자의 신분은 무엇으로 바뀔까?',c:['피고인','피해자','수형자','증인'],a:0,ex:'피의자 → (기소) → 피고인 → (실형 확정) → 수형자'},
+ {q:'공판 절차의 순서로 옳은 것은?',c:['모두 → 심리 → 판결 선고','심리 → 모두 → 판결 선고','판결 선고 → 모두 → 심리','모두 → 판결 선고 → 심리'],a:0,ex:'모두 절차(진술 거부권 고지·인정 신문) → 심리 절차 → 판결 선고'},
+ {ox:1,q:'<span class="hl">피고인만</span> 항소했다면, 2심 법원은 1심보다 더 무거운 형을 선고할 수 없다.',a:true,ex:'불이익 변경 금지의 원칙! 피고인이 겁먹지 않고 상소할 수 있게 해 줘요.'},
+ {ox:1,q:'무죄 판결이 확정된 사건이라도 검사가 원하면 <span class="hl">같은 사건으로 다시</span> 처벌할 수 있다.',a:false,ex:'일사부재리의 원칙 — 판결이 확정된 사건은 다시 처벌하지 않아요.'},
+ {q:'구속되어 재판을 받다가 <span class="hl">무죄 판결이 확정</span>되었다. 국가에 청구할 수 있는 것은?',c:['형사 보상','기소 유예','구속 적부심','항소'],a:0,ex:'형사 보상 제도! 명예 회복 제도로 무죄 판결을 알릴 수도 있어요.'}
+];
+const COLS=['#E5534B','#2F7DD1','#E8A317','#2BA36B'];
+let qi=0,score=0,combo=0,locked=false,qInt=null,order=[],qTime=20,timerOn=true;
+function startQuiz(){ ac(); clearT(); inQuiz=true; qi=0;score=0;combo=0; drawTop();
+  document.getElementById('nav').style.display='flex'; document.getElementById('next').style.display='none'; document.getElementById('pg').textContent='';
+  sceneEl.innerHTML=`<section class="scene" id="quiz" style="padding-top:110px"><div class="center" style="flex-direction:column;height:100%;color:#fff">
+   ${A('pop',.1,E('🎯',140))}${A('up',.3,'<div style="font-size:90px;font-weight:900">형사 절차 퀴즈!</div>')}
+   ${A('up',.5,`<div style="font-size:32px;opacity:.85;margin-top:12px">${QUIZ.length}문제 · 한 문제 ${qTime}초 · 연속으로 맞히면 콤보!</div>`)}
+   ${A('pop',.8,'<button class="startbtn" id="qs">시작! 🚀</button>')}
+   ${A('fade',1,`<label style="margin-top:28px;font-size:24px;opacity:.8;cursor:pointer"><input type="checkbox" id="tOn" ${timerOn?'checked':''} style="width:22px;height:22px;vertical-align:middle"> 시간 제한 켜기</label>`)}
+  </div></section>`;
+  sfx('fanfare');
+  document.getElementById('qs').onclick=()=>{ timerOn=document.getElementById('tOn').checked; showQ(); };
+}
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function showQ(){
+  clearT(); locked=false; const q=QUIZ[qi]; sfx('whoosh');
+  let body;
+  if(q.ox){ body=`<div class="ox">${A('pop',.3,`<button class="ch" data-v="1" style="background:#2F7DD1">O</button>`)}${A('pop',.45,`<button class="ch" data-v="0" style="background:#E5534B">X</button>`)}</div>`; }
+  else { order=shuffle(q.c.map((t,i)=>i)); body=`<div class="choices">${order.map((oi,k)=>A('pop',.3+k*.12,`<button class="ch" data-v="${oi}" style="background:${COLS[k]};width:100%"><span class="k">${k+1}</span>${q.c[oi]}</button>`)).join('')}</div>`; }
+  sceneEl.innerHTML=`<section class="scene" id="quiz" style="padding:100px 80px 80px">
+   <div class="qhead"><span class="qnum">Q${qi+1} / ${QUIZ.length}</span><span style="font-size:26px;opacity:.8">${q.ox?'O / X':'4지 선택'}</span><span class="combo" id="combo">${combo>=2?combo+' 콤보! 🔥':''}</span><span class="qscore">⭐ ${score}</span></div>
+   ${A('up',0,`<div class="qcard"><div style="width:100%;word-break:keep-all">${q.q}</div></div>`)}
+   ${timerOn?`<div class="timer"><i id="ti"></i></div>`:''}
+   ${body}<div id="ex"></div></section>`;
+  sceneEl.querySelectorAll('.ch').forEach(b=>b.onclick=()=>answer(b));
+  if(timerOn){ let left=qTime*10; const ti=document.getElementById('ti');
+    qInt=setInterval(()=>{ left--; ti.style.transform=`scaleX(${left/(qTime*10)})`; if(left<=50&&left%10===0) sfx('tick'); if(left<=0){ clearInterval(qInt); answer(null);} },100); }
+}
+function answer(btn){
+  if(locked) return; locked=true; clearInterval(qInt); const q=QUIZ[qi];
+  const correctV=q.ox?(q.a?'1':'0'):String(q.a); const ok=btn&&btn.dataset.v===correctV;
+  sceneEl.querySelectorAll('.ch').forEach(b=>{ if(b.dataset.v===correctV) b.classList.add('right'); else if(b===btn) b.classList.add('wrong'); else b.classList.add('dim'); });
+  const mk=document.createElement('div'); mk.className='bigmark'; mk.style.color=ok?'#5DD39E':'#E5534B'; mk.textContent=ok?'⭕':'❌'; stage.appendChild(mk); setTimeout(()=>mk.remove(),950);
+  if(ok){ score++; combo++; sfx('ding'); if(combo>=2) setTimeout(()=>sfx('combo',combo),350); confetti(combo>=3?90:40); }
+  else { combo=0; btn?sfx('sad'):(sfx('buzz')); shake(); }
+  document.getElementById('combo').textContent=combo>=2?combo+' 콤보! 🔥':'';
+  sceneEl.querySelector('.qscore').textContent='⭐ '+score;
+  const ans=q.ox?(q.a?'O':'X'):q.c[q.a];
+  document.getElementById('ex').innerHTML=A('up',.2,`<div class="expl ${ok?'ok':'no'}"><span class="emo" style="font-size:60px">${ok?'🎉':(btn?'😵':'⏰')}</span><div><b>${ok?'딩동댕!':(btn?'아쉬워요!':'시간 끝!')}</b> 정답은 <b>${ans}</b><br><span style="font-weight:600">${q.ex}</span></div>
+   <button class="startbtn" style="margin:0 0 0 auto;font-size:30px;padding:14px 30px;animation:none;flex:none" id="nq">${qi<QUIZ.length-1?'다음 문제 ▶':'결과 보기 🏆'}</button></div>`);
+  document.getElementById('nq').onclick=nextQ;
+}
+function nextQ(){ if(qi<QUIZ.length-1){ qi++; showQ(); } else result(); }
+function result(){
+  clearT(); const n=QUIZ.length, r=score/n;
+  const [emo,ttl,msg]= r===1?['👑','명판사 등극!','형사 절차를 완벽하게 꿰뚫었어요!']: r>=.8?['⚖️','에이스 변호사','거의 다 왔어요! 틀린 것만 다시 확인!']: r>=.5?['🔍','성실한 수사관','흐름은 잡았어요. 헷갈리는 짝을 다시 보자!']:['📚','수습 법조인','정리 화면을 다시 보고 재도전!'];
+  sceneEl.innerHTML=`<section class="scene" id="quiz"><div class="result center" style="flex-direction:column;height:100%">
+   ${A('pop',.2,E(emo,170))}${A('up',.5,`<div style="font-size:96px;font-weight:900">${score} / ${n}</div>`)}
+   ${A('up',.8,`<div style="font-size:60px;font-weight:900;color:var(--gold)">${ttl}</div>`)}${A('up',1,`<div style="font-size:32px;margin-top:10px;opacity:.9">${msg}</div>`)}
+   ${A('pop',1.3,`<div style="display:flex;gap:20px;margin-top:40px"><button class="startbtn" style="animation:none" onclick="startQuiz()">🔁 다시 도전</button><button class="startbtn" style="animation:none;background:#fff" onclick="go(${SC.length-1})">📋 정리 보기</button><button class="startbtn" style="animation:none;background:#fff" onclick="go(1)">🎬 처음부터</button></div>`)}
+  </div></section>`;
+  r>=.5?(sfx('cheer'),confetti(220)):sfx('boing');
+}
+
+/* ===================== 꽃가루 ===================== */
+const cv=document.getElementById('fx'),cx=cv.getContext('2d'); let parts=[],raf=null;
+function confetti(n){ for(let i=0;i<n;i++) parts.push({x:800+(Math.random()-.5)*400,y:450,vx:(Math.random()-.5)*26,vy:-Math.random()*22-6,r:Math.random()*360,vr:(Math.random()-.5)*20,w:10+Math.random()*10,h:6+Math.random()*8,c:['#E5534B','#2F7DD1','#F2B705','#2BA36B','#E8913A','#9b59b6'][i%6],life:0});
+  if(!raf) loop(); }
+function loop(){ cx.clearRect(0,0,1600,900); parts=parts.filter(p=>p.y<950&&p.life<240);
+  parts.forEach(p=>{p.vy+=.5;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;p.life++;cx.save();cx.translate(p.x,p.y);cx.rotate(p.r*Math.PI/180);cx.fillStyle=p.c;cx.fillRect(-p.w/2,-p.h/2,p.w,p.h);cx.restore();});
+  raf=parts.length?requestAnimationFrame(loop):null; if(!raf) cx.clearRect(0,0,1600,900); }
+
+/* ===================== 키보드 ===================== */
+addEventListener('keydown',e=>{
+  const k=e.key;
+  if(k==='f'||k==='F'){fs();return;} if(k==='m'||k==='M'){muted=!muted;drawTop();return;}
+  if(inQuiz){
+    const btns=[...sceneEl.querySelectorAll('.ch')];
+    if(!locked&&btns.length){ const q=QUIZ[qi];
+      if(q.ox){ if(k==='o'||k==='O'||k==='1') answer(btns[0]); if(k==='x'||k==='X'||k==='2') answer(btns[1]); }
+      else if(k>='1'&&k<='4') answer(btns[+k-1]); }
+    else if((k==='Enter'||k===' '||k==='ArrowRight')&&document.getElementById('nq')) { e.preventDefault(); nextQ(); }
+    else if((k===' '||k==='Enter')&&document.getElementById('qs')) { e.preventDefault(); document.getElementById('qs').click(); }
+    return;
+  }
+  if(k==='a'||k==='A'){auto=!auto;drawTop();schedAuto();return;}
+  if(k==='ArrowRight'||k===' '||k==='PageDown'||k==='Enter'){ e.preventDefault(); cur===SC.length-1?startQuiz():go(cur+1); }
+  if(k==='ArrowLeft'||k==='PageUp') go(cur-1);
+});
+go(0);
+</script>
+</body>
+</html>
