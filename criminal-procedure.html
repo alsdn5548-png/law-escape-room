@@ -9,9 +9,9 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;overflow:hidden;background:#1b1e27;font-family:"Pretendard","Malgun Gothic","맑은 고딕","Apple SD Gothic Neo",sans-serif;color:var(--ink);user-select:none}
 #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
-#stage{position:relative;width:1600px;height:900px;background:var(--bg);overflow:hidden;transform-origin:center center;border-radius:6px}
+#stage{position:relative;flex-shrink:0;width:1600px;height:900px;background:var(--bg);overflow:hidden;transform-origin:center center;border-radius:6px}
 #stage.shake{animation:shake .45s}
-@keyframes shake{0%,100%{transform:translate(0,0) scale(var(--s))}20%{transform:translate(-14px,6px) scale(var(--s))}40%{transform:translate(12px,-8px) scale(var(--s))}60%{transform:translate(-8px,4px) scale(var(--s))}80%{transform:translate(6px,-2px) scale(var(--s))}}
+@keyframes shake{0%,100%{transform:translate(0,0) rotate(var(--r,0deg)) scale(var(--s))}20%{transform:translate(-14px,6px) rotate(var(--r,0deg)) scale(var(--s))}40%{transform:translate(12px,-8px) rotate(var(--r,0deg)) scale(var(--s))}60%{transform:translate(-8px,4px) rotate(var(--r,0deg)) scale(var(--s))}80%{transform:translate(6px,-2px) rotate(var(--r,0deg)) scale(var(--s))}}
 /* 상단 진행 표시 */
 #top{position:absolute;left:0;right:0;top:0;height:70px;display:flex;align-items:center;gap:10px;padding:0 30px;z-index:20}
 .chip{padding:8px 22px;border-radius:30px;font-weight:800;font-size:22px;background:#0000000d;color:#0005;transition:.4s}
@@ -367,7 +367,7 @@ const SC=[
 /* ===================== 진행 ===================== */
 const stage=document.getElementById('stage'), sceneEl=document.getElementById('scene');
 let cur=0, timers=[], auto=false, autoT=null, inQuiz=false;
-function fit(){ const s=Math.min(innerWidth/1600,innerHeight/900); stage.style.setProperty('--s',s); stage.style.transform=`scale(${s})`; }
+function fit(){ const p=innerHeight>innerWidth; /* 세로 폰: 화면을 90도 돌려 꽉 채움 */ const s=p?Math.min(innerHeight/1600,innerWidth/900):Math.min(innerWidth/1600,innerHeight/900); const r=p?'90deg':'0deg'; stage.style.setProperty('--s',s); stage.style.setProperty('--r',r); stage.style.transform=`rotate(${r}) scale(${s})`; }
 addEventListener('resize',fit); fit();
 function drawTop(){
   const st=inQuiz?5:SC[cur].stage;
