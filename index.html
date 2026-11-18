@@ -486,7 +486,8 @@ function ensureTeam(next) {
     <div class="q" style="color:#fff">② 내 변호사 캐릭터</div>
     <div class="avatars">${AVATARS.map((_, k) => `<button class="av ${k === av ? 'on' : ''}" data-k="${k}">${heroSVG(k)}</button>`).join('')}</div>
     <p style="font-size:15px">🕵️ 현장 탐정: QR을 찍고 문제를 푼다 · 📒 수사 기록관: 나온 단서를 기록지에 적는다</p>
-  </div>`);
+    <p style="font-size:12px;color:#7D869C">기기 기억: ${S.team ? esc(tName(S.team)) + ' (지금 반 모둠 목록에 없음 → 다시 고르기)' : (store.get(CFG_KEY).session ? '반 정보는 있고 모둠은 아직 안 고름' : '없음 — 이 브라우저에서 처음이거나 개인정보 보호 탭')} · 반 ${esc(String(CFG.session).slice(-4))}</p>
+  </div>`); // 11-18: 아이폰에서 다시 고르게 되는 원인을 화면 캡처만으로 알 수 있게
   app.append(c);
   c.querySelectorAll('.av').forEach((b) => { b.onclick = () => { av = +b.dataset.k; c.querySelectorAll('.av').forEach((x) => x.classList.toggle('on', x === b)); }; });
   c.querySelectorAll('.tm').forEach((b) => { b.onclick = () => {
