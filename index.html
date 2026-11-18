@@ -254,10 +254,25 @@ async function flush() {
     }
   } finally { flushing = false; }
 }
+const CFG_KEY = 'escape-v3-cfg';
 async function loadConfig() {
-  const c = await apiGet('board');
-  if (c && c.ok && c.session) { CFG = { session: c.session, cls: c.cls, teams: c.teams, limitMin: c.limitMin, start: c.start }; BOARD = c; }
-  if (S.session !== CFG.session) { const av = S.avatar; S = fresh(); S.session = CFG.session; S.avatar = av; save(); } // 새 반이 시작됨 → 이 기기 기록 비우기
+  // 11-18 민우님: QR을 찍을 때마다 모둠을 다시 고르고 시간이 처음으로 돌아갔다.
+  // 원인: 서버(앱스크립트)가 늦거나 한 번 실패하면 반 번호가 'local'로 남아 '새 반'으로 착각해 기록을 지웠다.
+  // → 두 번까지 다시 묻고, 그래도 안 되면 마지막으로 받은 반 정보를 그대로 쓴다. 기록은 서버가 '진짜 다른 반'이라고 할 때만 지운다.
+  let c = await apiGet('board');
+  if (!(c && c.ok && c.session)) c = await apiGet('board');
+  if (c && c.ok && c.session) {
+    CFG = { session: c.session, cls: c.cls, teams: c.teams, limitMin: c.limitMin, start: c.start }; BOARD = c;
+    store.set(JSON.stringify(CFG), CFG_KEY);
+  } else {
+    const old = store.get(CFG_KEY);
+    if (old && old.session) CFG = Object.assign({}, CFG, old);
+    else if (S.session) CFG.session = S.session; // 서버도 기억도 없으면 지금 기록을 지키는 쪽으로
+  }
+  if (S.session !== CFG.session) {
+    if (S.session && c && c.ok) { const av = S.avatar; S = fresh(); S.avatar = av; } // 선생님이 진짜 새 반을 시작함 → 이 기기 기록 비우기
+    S.session = CFG.session; save();
+  }
 }
 function teamSolved() { // 내 기기 + 같은 모둠 다른 기기(서버)
   const all = Object.assign({}, S.solved);
