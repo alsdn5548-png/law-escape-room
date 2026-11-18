@@ -420,7 +420,13 @@ function hud() {
 }
 function wireHud() {
   const b = document.getElementById('snd'); if (b) b.onclick = () => { Snd.toggle(); b.textContent = Snd.on ? '🔊' : '🔇'; };
-  const h = document.getElementById('home'); if (h) h.onclick = () => { history.replaceState(null, '', location.pathname); home(); };
+  // 11-18 민우님: 🗂️을 다시 누르면 보던 사건 현장으로 돌아간다 (현황 ↔ 현장 토글)
+  const h = document.getElementById('home');
+  if (h) h.onclick = () => {
+    if (viewingHome && lastStation && QS[lastStation] && !teamSolved()[lastStation] && !S.end) {
+      history.replaceState(null, '', location.pathname + '?qr=' + lastStation); station(lastStation);
+    } else { history.replaceState(null, '', location.pathname); home(); }
+  };
 }
 function lock(text) { S.wrong++; S.lockUntil = Date.now() + LOCK_SEC * 1000; S.lockText = text; save(); Snd.sfx('bad'); report('wrong'); showLock(); }
 let lockTimer = null;
@@ -504,11 +510,16 @@ function home() {
   const fb = $(`<div class="center"><button class="btn warm" id="final" ${n < 10 ? 'disabled' : ''}>⚖️ 최종 변론 법정 ${n < 10 ? '(10개를 모두 모으면 열려요)' : '입장!'}</button></div>`);
   app.append(fb);
   fb.querySelector('#final').onclick = finalCourt;
+  if (lastStation && QS[lastStation] && !solved[lastStation]) {
+    const back = $(`<div class="center"><button class="btn" id="backStation">↩︎ 증거물 ${lastStation} 현장으로 돌아가기</button></div>`);
+    app.append(back); back.querySelector('#backStation').onclick = () => { history.replaceState(null, '', location.pathname + '?qr=' + lastStation); station(lastStation); };
+  }
 }
 
 // ---------------------------------------------------------------- 증거물 QR
+let lastStation = 0;
 function station(no) {
-  viewingHome = false;
+  viewingHome = false; if (QS[no]) lastStation = no;
   const Q = QS[no]; closeSheet();
   if (!Q) return home();
   if (S.end) return finish();
