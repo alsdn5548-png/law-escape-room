@@ -210,6 +210,8 @@ const fresh = () => ({ session: '', team: '', avatar: 0, local0: 0, solved: {}, 
 const store = { get(k = KEY) { try { return JSON.parse(localStorage.getItem(k) || '{}'); } catch { return {}; } },
   set(v, k = KEY) { try { localStorage.setItem(k, v); } catch { /* 저장 못 해도 계속 */ } } };
 let S = Object.assign(fresh(), store.get());
+// 11-18 서지안: 진단 표시는 서버 응답을 저장하기 '전'의 기기 기록으로 판단한다
+const BOOT = { team: S.team || '', session: S.session || '', hadCfg: (() => { try { return !!JSON.parse(localStorage.getItem('escape-v3-cfg') || '{}').session; } catch { return false; } })() };
 const save = () => store.set(JSON.stringify(S));
 let CFG = { session: 'local', cls: '', teams: DEFAULT_TEAMS, limitMin: 25, start: 0 };
 let BOARD = null; // 서버의 모둠별 진행 (대시보드·우리 모둠 진행 합치기)
@@ -486,7 +488,7 @@ function ensureTeam(next) {
     <div class="q" style="color:#fff">② 내 변호사 캐릭터</div>
     <div class="avatars">${AVATARS.map((_, k) => `<button class="av ${k === av ? 'on' : ''}" data-k="${k}">${heroSVG(k)}</button>`).join('')}</div>
     <p style="font-size:15px">🕵️ 현장 탐정: QR을 찍고 문제를 푼다 · 📒 수사 기록관: 나온 단서를 기록지에 적는다</p>
-    <p style="font-size:12px;color:#7D869C">기기 기억: ${S.team ? esc(tName(S.team)) + ' (지금 반 모둠 목록에 없음 → 다시 고르기)' : (store.get(CFG_KEY).session ? '반 정보는 있고 모둠은 아직 안 고름' : '없음 — 이 브라우저에서 처음이거나 개인정보 보호 탭')} · 반 ${esc(String(CFG.session).slice(-4))}</p>
+    <p style="font-size:12px;color:#7D869C">기기 기억: ${BOOT.team ? esc(tName(BOOT.team)) + (BOOT.session && BOOT.session !== CFG.session ? ' (선생님이 새 반 시작 → 다시 고르기)' : ' (지금 반 모둠 목록에 없음 → 다시 고르기)') : (BOOT.hadCfg || BOOT.session ? '반 정보는 있고 모둠은 아직 안 고름' : '없음 — 이 브라우저에서 처음이거나 개인정보 보호 탭')} · 반 ${esc(String(CFG.session).slice(-4))}</p>
   </div>`); // 11-18: 아이폰에서 다시 고르게 되는 원인을 화면 캡처만으로 알 수 있게
   app.append(c);
   c.querySelectorAll('.av').forEach((b) => { b.onclick = () => { av = +b.dataset.k; c.querySelectorAll('.av').forEach((x) => x.classList.toggle('on', x === b)); }; });
