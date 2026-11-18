@@ -705,6 +705,7 @@ setInterval(async () => { // 같은 모둠 다른 기기가 푼 것도 반영
     if (b.session !== CFG.session) { location.reload(); return; }
     const changed = JSON.stringify(BOARD && BOARD.progress) !== JSON.stringify(b.progress);
     BOARD = b; CFG.start = b.start; CFG.limitMin = b.limitMin;
+    store.set(JSON.stringify(CFG), CFG_KEY); // 11-18 서지안: 타이머 시작 시각을 기억에도 남겨, 다음 QR에서 서버가 안 돼도 같은 시계
     if (changed && viewingHome && !document.getElementById('sheet')) home();
   }
   flush();
